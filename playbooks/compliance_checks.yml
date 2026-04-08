@@ -1,0 +1,83 @@
+---
+- name: ESXi compliance checks (read-only)
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    selected_sites: "{{ vmware_sites | default([]) }}"
+
+  tasks:
+    - name: Verify vmware_sites input for compliance checks
+      ansible.builtin.assert:
+        that:
+          - selected_sites | length > 0
+        fail_msg: "La variable vmware_sites est vide."
+
+    - name: Run compliance checks for each site
+      ansible.builtin.include_tasks: tasks/compliance_checks_site.yml
+      loop: "{{ selected_sites }}"
+      loop_control:
+        loop_var: site
+        label: "{{ site.name }}"
+
+    - name: Build consolidated compliance report
+      ansible.builtin.set_fact:
+        compliance_report:
+          generated_at: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
+          scope:
+            sites: "{{ selected_sites | map(attribute='name') | list }}"
+          summary:
+            total_hosts: "{{ compliance_report_entries | default([]) | length }}"
+            secure_boot_non_compliant: >-
+              {{
+                compliance_report_entries | default([])
+                | selectattr('checks.secure_boot.status', 'equalto', 'non_compliant')
+                | list | length
+              }}
+            secure_boot_unknown_or_unavailable: >-
+              {{
+                compliance_report_entries | default([])
+                | selectattr('checks.secure_boot.status', 'in', ['unknown', 'unavailable'])
+                | list | length
+              }}
+            vib_non_compliant: >-
+              {{
+                compliance_report_entries | default([])
+                | selectattr('checks.vib_signature.status', 'equalto', 'non_compliant')
+                | list | length
+              }}
+            vib_unknown_or_unavailable: >-
+              {{
+                compliance_report_entries | default([])
+                | selectattr('checks.vib_signature.status', 'in', ['unknown', 'unavailable'])
+                | list | length
+              }}
+            tls_non_compliant: >-
+              {{
+                compliance_report_entries | default([])
+                | selectattr('checks.tls_validation.status', 'equalto', 'non_compliant')
+                | list | length
+              }}
+          hosts: "{{ compliance_report_entries | default([]) }}"
+
+    - name: Print consolidated compliance report
+      ansible.builtin.debug:
+        var: compliance_report
+
+    - name: Write compliance report to file when requested
+      ansible.builtin.copy:
+        content: "{{ compliance_report | to_nice_json }}\n"
+        dest: "{{ compliance_checks_report_path }}"
+        mode: "0640"
+      when: compliance_checks_report_path | default('') | length > 0
+
+    - name: Fail CI when non-compliant hosts are found (optional)
+      ansible.builtin.assert:
+        that:
+          - compliance_report.summary.secure_boot_non_compliant | int == 0
+          - compliance_report.summary.vib_non_compliant | int == 0
+          - compliance_report.summary.tls_non_compliant | int == 0
+        fail_msg: >-
+          Des hôtes ESXi non conformes ont été détectés.
+          Consultez compliance_report.hosts pour le détail.
+      when: compliance_checks_fail_on_non_compliant | default(false)

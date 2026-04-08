@@ -29,3 +29,11 @@ Cette séparation évite les doubles écritures de configuration et clarifie la 
 3. Conservez des règles de rétention adaptées aux besoins audit/compliance.
 4. Supervisez les échecs d'authentification et changements de configuration.
 5. Exécutez `playbooks/preflight.yml` avant toute exécution `playbooks/site.yml`.
+
+
+## Compliance: mode check vs remediation
+
+- `playbooks/compliance_checks.yml`: mode **check** (lecture seule). Produit un rapport consolidé exploitable en CI (`compliance_checks_report_path`) et peut échouer volontairement avec `compliance_checks_fail_on_non_compliant=true`.
+- `playbooks/site.yml`: mode **remediation** (applique la configuration cible via les rôles de provisioning/hardening).
+
+Le mode check permet d'identifier les hôtes non conformes sans action destructive.

@@ -150,6 +150,30 @@ Si vous ajoutez un filtrage dans vos variables/groupes, lancez en limitant l'inv
 ansible-playbook -i inventories/production/hosts.yml playbooks/site.yml
 ```
 
+
+### 6.4 Contrôle de conformité (lecture seule)
+
+Le playbook `playbooks/compliance_checks.yml` exécute des contrôles **non destructifs** sur les hôtes ESXi :
+
+- état **Secure Boot** (si récupérable via API),
+- posture VIB (niveau d'acceptation, indicateur de risque VIB non signés),
+- posture TLS côté automation (`validate_certs`).
+
+Exemple :
+
+```bash
+ansible-playbook -i inventories/production/hosts.yml playbooks/compliance_checks.yml
+```
+
+Export CI (JSON) :
+
+```bash
+ansible-playbook -i inventories/production/hosts.yml playbooks/compliance_checks.yml \
+  -e compliance_checks_report_path=artifacts/compliance-report.json
+```
+
+Le mode `check` (contrôle) ne remédie rien. Les remédiations restent dans les rôles de déploiement/hardening (`playbooks/site.yml`).
+
 ---
 
 ## 7) Ordre des rôles (logique d'exécution)

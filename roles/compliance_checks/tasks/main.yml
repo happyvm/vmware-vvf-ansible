@@ -1,0 +1,115 @@
+---
+- name: Build compliance context for ESXi host
+  ansible.builtin.set_fact:
+    compliance_tls_validate_certs: "{{ vc.validate_certs | default(not (vmware_allow_insecure_tls | default(true))) }}"
+
+- name: Read Secure Boot posture from ESXi facts (best effort)
+  block:
+    - name: Collect ESXi host facts
+      community.vmware.vmware_host_facts:
+        hostname: "{{ vc.hostname }}"
+        username: "{{ vc.username }}"
+        password: "{{ vc.password }}"
+        validate_certs: "{{ compliance_tls_validate_certs }}"
+        esxi_hostname: "{{ esxi.hostname }}"
+      delegate_to: localhost
+      register: compliance_host_facts
+      changed_when: false
+
+    - name: Normalize Secure Boot status
+      ansible.builtin.set_fact:
+        compliance_secure_boot_enabled: >-
+          {{
+            compliance_host_facts.ansible_facts.get('summary', {}).get('secure_boot_enabled',
+            compliance_host_facts.ansible_facts.get('secure_boot_enabled',
+            compliance_host_facts.ansible_facts.get('hosts_summary', {}).get(esxi.hostname, {}).get('secure_boot_enabled')))
+          }}
+        compliance_secure_boot_status: >-
+          {{
+            'compliant'
+            if (compliance_secure_boot_enabled is sameas true)
+            else (
+              'non_compliant'
+              if (compliance_secure_boot_enabled is sameas false)
+              else 'unknown'
+            )
+          }}
+  rescue:
+    - name: Flag Secure Boot check as unavailable
+      ansible.builtin.set_fact:
+        compliance_secure_boot_enabled: null
+        compliance_secure_boot_status: unavailable
+        compliance_secure_boot_error: "{{ ansible_failed_result.msg | default('Unable to query Secure Boot status') }}"
+
+- name: Read VIB acceptance posture (best effort)
+  block:
+    - name: Collect ESXi acceptance level
+      community.vmware.vmware_host_acceptance_info:
+        hostname: "{{ vc.hostname }}"
+        username: "{{ vc.username }}"
+        password: "{{ vc.password }}"
+        validate_certs: "{{ compliance_tls_validate_certs }}"
+        esxi_hostname: "{{ esxi.hostname }}"
+      delegate_to: localhost
+      register: compliance_acceptance_info
+      changed_when: false
+
+    - name: Normalize VIB acceptance posture
+      ansible.builtin.set_fact:
+        compliance_vib_acceptance_level: >-
+          {{
+            compliance_acceptance_info.acceptance_level
+            | default(compliance_acceptance_info.host_acceptance_level)
+            | default('unknown')
+          }}
+        compliance_vib_signature_status: >-
+          {{
+            'non_compliant'
+            if (compliance_vib_acceptance_level | lower) in ['communitysupported']
+            else (
+              'unknown'
+              if (compliance_vib_acceptance_level | lower) in ['unknown', '']
+              else 'compliant'
+            )
+          }}
+        compliance_vib_unsigned_possible: >-
+          {{
+            (compliance_vib_acceptance_level | lower) in ['communitysupported']
+          }}
+  rescue:
+    - name: Flag VIB acceptance check as unavailable
+      ansible.builtin.set_fact:
+        compliance_vib_acceptance_level: unavailable
+        compliance_vib_signature_status: unavailable
+        compliance_vib_unsigned_possible: null
+        compliance_vib_error: "{{ ansible_failed_result.msg | default('Unable to query VIB acceptance status') }}"
+
+- name: Build compliance result entry
+  ansible.builtin.set_fact:
+    compliance_entry:
+      site: "{{ site.name }}"
+      vcenter: "{{ vc.name }}"
+      datacenter: "{{ dc.name }}"
+      cluster: "{{ cluster.name }}"
+      esxi_host: "{{ esxi.hostname }}"
+      checks:
+        secure_boot:
+          status: "{{ compliance_secure_boot_status }}"
+          enabled: "{{ compliance_secure_boot_enabled | default(None) }}"
+          error: "{{ compliance_secure_boot_error | default(omit) }}"
+        vib_signature:
+          status: "{{ compliance_vib_signature_status }}"
+          acceptance_level: "{{ compliance_vib_acceptance_level }}"
+          unsigned_vib_possible: "{{ compliance_vib_unsigned_possible | default(None) }}"
+          error: "{{ compliance_vib_error | default(omit) }}"
+        tls_validation:
+          status: "{{ 'compliant' if compliance_tls_validate_certs else 'non_compliant' }}"
+          validate_certs: "{{ compliance_tls_validate_certs }}"
+
+- name: Append compliance entry to global report
+  ansible.builtin.set_fact:
+    compliance_report_entries: "{{ (compliance_report_entries | default([])) + [compliance_entry] }}"
+
+- name: Show per-host compliance summary
+  ansible.builtin.debug:
+    msg: "{{ compliance_entry }}"
