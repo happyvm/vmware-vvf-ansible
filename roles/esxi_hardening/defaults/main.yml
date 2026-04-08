@@ -1,0 +1,9 @@
+---
+esxi_hardening_defaults:
+  lockdown_mode: normal
+  ssh_enabled: false
+  esxi_shell_enabled: false
+  suppress_shell_warning: false
+  ntp_enabled: true
+  firewall_default_action: allow
+  coredump_enabled: true

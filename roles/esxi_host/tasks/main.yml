@@ -34,9 +34,9 @@
     password: "{{ vc.password }}"
     validate_certs: "{{ vc.validate_certs | default(false) }}"
     esxi_hostname: "{{ esxi.hostname }}"
-    ntp_servers: "{{ esxi.ntp_servers | default([]) }}"
+    ntp_servers: "{{ esxi.ntp_servers | default(vmware_observability.ntp_servers | default([])) }}"
     state: present
-  when: esxi.ntp_servers is defined
+  when: esxi.ntp_servers is defined or (vmware_observability is defined and vmware_observability.ntp_servers is defined)
   delegate_to: localhost
 
 - name: Configurer les interfaces VMkernel
@@ -61,19 +61,32 @@
     label: "{{ esxi.hostname }} / {{ item.name }}"
   delegate_to: localhost
 
-- name: Configurer les politiques de multipathing
+- name: Validate multipathing inputs are datastore based
+  ansible.builtin.assert:
+    that:
+      - item.policy is defined
+      - (item.datastore | default(item.device)) is defined
+      - (item.datastore | default(item.device)) is not match('^naa\\.')
+    fail_msg: >-
+      Multipathing invalide pour {{ esxi.hostname }}: renseignez datastore (nom de datastore)
+      et policy. Les identifiants naa.* ne sont pas supportés par vmware_host_multipath.
+  loop: "{{ esxi.multipath_policies | default(esxi.multipath_policy | default([])) }}"
+  loop_control:
+    label: "{{ esxi.hostname }} / {{ item.datastore | default(item.device | default('missing')) }}"
+
+- name: Configurer les politiques de multipathing par datastore
   community.vmware.vmware_host_multipath:
     hostname: "{{ vc.hostname }}"
     username: "{{ vc.username }}"
     password: "{{ vc.password }}"
     validate_certs: "{{ vc.validate_certs | default(false) }}"
     esxi_hostname: "{{ esxi.hostname }}"
-    datastore: "{{ item.device }}"
+    datastore: "{{ item.datastore | default(item.device) }}"
     multipath_policy: "{{ item.policy }}"
     state: present
-  loop: "{{ esxi.multipath_policy | default([]) }}"
+  loop: "{{ esxi.multipath_policies | default(esxi.multipath_policy | default([])) }}"
   loop_control:
-    label: "{{ esxi.hostname }} / {{ item.device }}"
+    label: "{{ esxi.hostname }} / {{ item.datastore | default(item.device) }}"
   delegate_to: localhost
 
 - name: Appliquer le hardening ESXi

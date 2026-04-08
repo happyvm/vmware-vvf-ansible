@@ -1,4 +1,14 @@
 ---
+- name: Validate vCenter local account model
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.password is defined
+    fail_msg: "Compte local vCenter invalide: name/password requis."
+  loop: "{{ vc.local_accounts | default([]) }}"
+  loop_control:
+    label: "{{ item.name | default('local-account-unknown') }}"
+
 - name: Créer les rôles locaux du vCenter
   community.vmware.vmware_local_role_manager:
     hostname: "{{ vc.hostname }}"
@@ -11,7 +21,7 @@
   loop: "{{ vc.local_roles | default([]) }}"
   delegate_to: localhost
 
-- name: Créer les comptes locaux sur vCenter
+- name: Créer les comptes locaux strictement nécessaires sur vCenter
   community.vmware.vmware_local_user_manager:
     hostname: "{{ vc.hostname }}"
     username: "{{ vc.username }}"
@@ -22,9 +32,28 @@
     description: "Compte créé par Ansible"
     state: present
   loop: "{{ vc.local_accounts | default([]) }}"
+  when: not (vc.hardening.local_accounts_minimal | default(true)) or (item.required | default(false))
   delegate_to: localhost
 
-- name: Assigner les permissions aux comptes locaux
+- name: Assigner les permissions aux groupes vCenter (recommandé)
+  community.vmware.vmware_object_role_permission:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    object_name: "{{ item.object_name | default(vc.datacenters[0].name if (vc.datacenters | default([]) | length > 0) else 'Datacenters') }}"
+    object_type: "{{ item.object_type | default('Datacenter') }}"
+    principal: "{{ item.group_name }}"
+    group: true
+    role: "{{ item.role }}"
+    state: present
+    propagate: "{{ item.propagate | default(true) }}"
+  loop: "{{ vc.group_permissions | default([]) }}"
+  loop_control:
+    label: "{{ item.group_name | default('group-unknown') }}"
+  delegate_to: localhost
+
+- name: Assigner les permissions aux comptes locaux (fallback)
   community.vmware.vmware_object_role_permission:
     hostname: "{{ vc.hostname }}"
     username: "{{ vc.username }}"
@@ -40,6 +69,7 @@
   when:
     - vc.datacenters | default([]) | length > 0
     - item.role is defined
+    - (vc.group_permissions | default([]) | length) == 0
   delegate_to: localhost
 
 - name: Appliquer le hardening vCenter

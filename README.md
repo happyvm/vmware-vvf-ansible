@@ -268,3 +268,15 @@ Validation locale des fixtures :
 ansible-playbook tests/playbooks/validate_inventory.yml -e inventory_fixture=tests/inventory/simple.yml
 ansible-playbook tests/playbooks/validate_inventory.yml -e inventory_fixture=tests/inventory/multisite.yml
 ```
+
+---
+
+## 13) Nouveautés de baseline sécurité et observabilité
+
+- **Preflight renforcé**: validation complète de `vmware_sites` (sites, vCenters, datacenters, clusters, hôtes, multipathing datastore-based) avec messages d'erreur lisibles.
+- **Rôle `vcenter_hardening`**: baseline TLS/certificats, bannière légale, comptes locaux minimaux, permissions via groupes, paramètres de journalisation.
+- **Rôle `esxi_hardening`**: lockdown mode, options SSH/ESXi Shell, bannière, NTP, syslog, options avancées documentées.
+- **Rôle `dvswitch`**: création des vSphere Distributed Switches avant les dvPortgroups (nom, version, uplinks, MTU, discovery, health checks).
+- **Rôle `dvportgroup` étendu**: VLAN + politiques de sécurité (`forged_transmits`, `mac_changes`, `promiscuous_mode`) et MTU quand supporté.
+- **Rôle `cluster` étendu**: paramètres HA de production (admission control, host monitoring, isolation response, restart priority), plus structures VM/Host groups et règles associées (compatibles avec le schéma actuel).
+- **Observabilité globale**: nouvelle variable racine `vmware_observability` + documentation d'exploitation (`docs/OPERATIONS.md`).
