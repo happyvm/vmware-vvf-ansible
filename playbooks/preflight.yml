@@ -136,6 +136,36 @@
       loop_control:
         label: "{{ item.0.name | default('cluster-unknown') }} / {{ item.1.hostname | default('esxi-unknown') }}"
 
+
+    - name: Build list of vCenters using insecure TLS validation
+      ansible.builtin.set_fact:
+        preflight_insecure_vcenters: >-
+          {{
+            preflight_vcenters
+            | selectattr('validate_certs', 'defined')
+            | selectattr('validate_certs', 'equalto', false)
+            | map(attribute='name')
+            | list
+            +
+            (
+              preflight_vcenters
+              | rejectattr('validate_certs', 'defined')
+              | selectattr('name', 'defined')
+              | map(attribute='name')
+              | list
+              if (vmware_allow_insecure_tls | default(true)) else []
+            )
+          }}
+
+    - name: Warn when TLS certificate validation is disabled
+      ansible.builtin.debug:
+        msg: >-
+          ATTENTION: validate_certs=false est toléré uniquement en environnement
+          à certificats auto-signés non approuvés. vCenters concernés:
+          {{ preflight_insecure_vcenters | join(', ') }}.
+        warn: true
+      when: preflight_insecure_vcenters | length > 0
+
     - name: Check required local binaries
       ansible.builtin.command: "which {{ item }}"
       changed_when: false

@@ -78,6 +78,8 @@ Fichier : `inventories/production/group_vars/all.yml`
 Exemple minimal (1 site / 1 vCenter / 1 datacenter / 1 cluster) :
 
 ```yaml
+vmware_allow_insecure_tls: true  # Toléré uniquement avec certificats auto-signés non approuvés
+
 vmware_sites:
   - name: paris
     vcenters:
@@ -128,6 +130,7 @@ Utiliser **Ansible Vault** pour tous les identifiants :
 ### 6.1 Preflight
 
 Valide la structure minimale `vmware_sites` et quelques prérequis locaux.
+Affiche aussi un warning explicite si un vCenter est configuré avec `validate_certs: false` (ou si `vmware_allow_insecure_tls: true` est actif sans override).
 
 ```bash
 ansible-playbook playbooks/preflight.yml
@@ -244,7 +247,9 @@ pwsh ./scripts/export-config.ps1 \
 
 ## 11) Recommandations de sécurité
 
-- Utiliser `validate_certs: true` en production avec une PKI maîtrisée.
+- `validate_certs: false` est toléré uniquement en environnement à certificats auto-signés non approuvés (exception temporaire encadrée).
+- Piloter le comportement par `vmware_allow_insecure_tls` (mettre `false` en production pour forcer `validate_certs: true` par défaut).
+- Utiliser `validate_certs: true` explicitement sur chaque vCenter en production avec une PKI maîtrisée.
 - Appliquer le principe du moindre privilège sur les comptes d'automatisation.
 - Journaliser toutes les exécutions Ansible (CI + artefacts de logs).
 - Segmenter réseau/API (jump host, ACL, bastion).
