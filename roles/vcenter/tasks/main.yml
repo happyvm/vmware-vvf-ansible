@@ -1,0 +1,52 @@
+---
+- name: Créer les rôles locaux du vCenter
+  community.vmware.vmware_local_role_manager:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    local_role_name: "{{ item.name }}"
+    local_privilege_ids: "{{ item.privileges }}"
+    state: present
+  loop: "{{ vc.local_roles | default([]) }}"
+  delegate_to: localhost
+
+- name: Créer les comptes locaux sur vCenter
+  community.vmware.vmware_local_user_manager:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    local_username: "{{ item.name }}"
+    local_password: "{{ item.password }}"
+    description: "Compte créé par Ansible"
+    state: present
+  loop: "{{ vc.local_accounts | default([]) }}"
+  delegate_to: localhost
+
+- name: Assigner les permissions aux comptes locaux
+  community.vmware.vmware_object_role_permission:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    object_name: "{{ vc.datacenters[0].name if (vc.datacenters | default([]) | length > 0) else 'Datacenters' }}"
+    object_type: Datacenter
+    principal: "{{ item.name }}"
+    role: "{{ item.role }}"
+    state: present
+    propagate: true
+  loop: "{{ vc.local_accounts | default([]) }}"
+  when:
+    - vc.datacenters | default([]) | length > 0
+    - item.role is defined
+  delegate_to: localhost
+
+- name: Configurer les datacenters définis
+  ansible.builtin.include_role:
+    name: datacenter
+  loop: "{{ vc.datacenters | default([]) }}"
+  loop_control:
+    label: "{{ vc.name }} / {{ item.name }}"
+  vars:
+    dc: "{{ item }}"

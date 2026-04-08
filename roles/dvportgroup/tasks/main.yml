@@ -1,0 +1,15 @@
+---
+- name: Créer / mettre à jour le distributed portgroup
+  community.vmware.vmware_dvs_portgroup:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    datacenter_name: "{{ dc.name }}"
+    switch_name: "{{ dvpg.dvswitch_name }}"
+    portgroup_name: "{{ dvpg.name }}"
+    vlan_id: "{{ dvpg.vlan_id }}"
+    port_binding: "{{ dvpg.port_binding | default('static') }}"
+    num_ports: "{{ dvpg.num_ports | default(128) }}"
+    state: present
+  delegate_to: localhost

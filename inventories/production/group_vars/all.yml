@@ -1,0 +1,84 @@
+---
+# Structure de référence multi-site / multi-vCenter.
+# Dupliquez les sections pour vos sites et remplacez les exemples.
+vmware_sites:
+  - name: paris
+    vcenters:
+      - name: vcsa-paris
+        hostname: vcsa-paris.example.local
+        username: "{{ vault_vcenter_paris_username }}"
+        password: "{{ vault_vcenter_paris_password }}"
+        validate_certs: false
+        local_roles:
+          - name: ansible-operator-role
+            privileges:
+              - System.Anonymous
+              - System.Read
+              - System.View
+              - Global.CancelTask
+              - Global.DisableMethods
+              - Global.EnableMethods
+              - Global.LogEvent
+              - Global.ManageCustomFields
+              - Global.SetCustomField
+        local_accounts:
+          - name: ansible-operator
+            password: "{{ vault_vcenter_paris_operator_password }}"
+            role: ansible-operator-role
+        datacenters:
+          - name: dc-paris-01
+            clusters:
+              - name: cl-paris-prod
+                drs_enabled: true
+                ha_enabled: true
+                evc_mode: "intel-broadwell"
+                host_rules:
+                  affinity:
+                    - name: app-tier-affinity
+                      enabled: true
+                      mandatory: false
+                      vms:
+                        - app01
+                        - app02
+                  anti_affinity:
+                    - name: db-tier-anti-affinity
+                      enabled: true
+                      mandatory: true
+                      vms:
+                        - db01
+                        - db02
+                hosts:
+                  - hostname: esxi01.paris.example.local
+                    username: root
+                    password: "{{ vault_esxi_paris_root_password }}"
+                    dns_servers:
+                      - 10.10.0.53
+                      - 10.10.0.54
+                    search_domains:
+                      - paris.example.local
+                    ntp_servers:
+                      - 0.pool.ntp.org
+                      - 1.pool.ntp.org
+                    vmkernel_interfaces:
+                      - name: vmk1
+                        dvswitch_name: dvs-paris-core
+                        dvportgroup_name: dvpg-vmotion
+                        ipv4: 172.16.10.11
+                        netmask: 255.255.255.0
+                        services:
+                          vMotion: true
+                          Provisioning: false
+                    multipath_policy:
+                      - device: naa.60060160a0b03f00be8d8b3cab4de011
+                        policy: VMW_PSP_RR
+                dvportgroups:
+                  - name: dvpg-vmotion
+                    dvswitch_name: dvs-paris-core
+                    vlan_id: 120
+                    port_binding: static
+                    num_ports: 64
+                  - name: dvpg-management
+                    dvswitch_name: dvs-paris-core
+                    vlan_id: 110
+                    port_binding: static
+                    num_ports: 128

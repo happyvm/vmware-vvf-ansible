@@ -1,0 +1,77 @@
+---
+- name: Ajouter l'hôte ESXi au cluster
+  community.vmware.vmware_host:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    datacenter_name: "{{ dc.name }}"
+    cluster_name: "{{ cluster.name }}"
+    esxi_hostname: "{{ esxi.hostname }}"
+    esxi_username: "{{ esxi.username }}"
+    esxi_password: "{{ esxi.password }}"
+    state: present
+  delegate_to: localhost
+
+- name: Configurer le DNS de l'hôte ESXi
+  community.vmware.vmware_host_dns:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    esxi_hostname: "{{ esxi.hostname }}"
+    dns_servers: "{{ esxi.dns_servers | default([]) }}"
+    search_domains: "{{ esxi.search_domains | default([]) }}"
+    type: static
+    state: present
+  when: esxi.dns_servers is defined
+  delegate_to: localhost
+
+- name: Configurer le NTP de l'hôte ESXi
+  community.vmware.vmware_host_ntp:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    esxi_hostname: "{{ esxi.hostname }}"
+    ntp_servers: "{{ esxi.ntp_servers | default([]) }}"
+    state: present
+  when: esxi.ntp_servers is defined
+  delegate_to: localhost
+
+- name: Configurer les interfaces VMkernel
+  community.vmware.vmware_vmkernel:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    esxi_hostname: "{{ esxi.hostname }}"
+    dvswitch_name: "{{ item.dvswitch_name }}"
+    portgroup_name: "{{ item.dvportgroup_name }}"
+    device: "{{ item.name }}"
+    network:
+      type: static
+      ip_address: "{{ item.ipv4 }}"
+      subnet_mask: "{{ item.netmask }}"
+    enable_vmotion: "{{ item.services.vMotion | default(false) }}"
+    enable_provisioning: "{{ item.services.Provisioning | default(false) }}"
+    state: present
+  loop: "{{ esxi.vmkernel_interfaces | default([]) }}"
+  loop_control:
+    label: "{{ esxi.hostname }} / {{ item.name }}"
+  delegate_to: localhost
+
+- name: Configurer les politiques de multipathing
+  community.vmware.vmware_host_multipath:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    esxi_hostname: "{{ esxi.hostname }}"
+    datastore: "{{ item.device }}"
+    multipath_policy: "{{ item.policy }}"
+    state: present
+  loop: "{{ esxi.multipath_policy | default([]) }}"
+  loop_control:
+    label: "{{ esxi.hostname }} / {{ item.device }}"
+  delegate_to: localhost
