@@ -1,6 +1,6 @@
 ---
 - name: Créer / mettre à jour le cluster
-  community.vmware.vmware_cluster:
+  vmware.vmware.cluster:
     hostname: "{{ vc.hostname }}"
     username: "{{ vc.username }}"
     password: "{{ vc.password }}"
@@ -76,7 +76,7 @@
   loop_control:
     label: "{{ cluster.name }} / {{ item.hostname }}"
   vars:
-    esxi: "{{ item }}"
+    esxi: "{{ item }}"  # noqa: var-naming[no-role-prefix]
 
 - name: Configurer les dvPortgroups du cluster
   ansible.builtin.include_role:
@@ -85,4 +85,4 @@
   loop_control:
     label: "{{ cluster.name }} / {{ item.name }}"
   vars:
-    dvpg: "{{ item }}"
+    dvpg: "{{ item }}"  # noqa: var-naming[no-role-prefix]

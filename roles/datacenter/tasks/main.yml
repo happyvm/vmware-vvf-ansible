@@ -16,4 +16,4 @@
   loop_control:
     label: "{{ dc.name }} / {{ item.name }}"
   vars:
-    cluster: "{{ item }}"
+    cluster: "{{ item }}"  # noqa: var-naming[no-role-prefix]

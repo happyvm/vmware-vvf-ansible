@@ -83,4 +83,4 @@
   loop_control:
     label: "{{ vc.name }} / {{ item.name }}"
   vars:
-    dc: "{{ item }}"
+    dc: "{{ item }}"  # noqa: var-naming[no-role-prefix]

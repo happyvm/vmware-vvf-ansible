@@ -4,8 +4,6 @@
 - name: Provisionnement VMware multi-site / multi-vCenter
   hosts: localhost
   gather_facts: false
-  collections:
-    - community.vmware
 
   vars:
     selected_sites: "{{ vmware_sites | default([]) }}"
@@ -24,5 +22,5 @@
       loop_control:
         label: "{{ item.0.name }} / {{ item.1.name }}"
       vars:
-        site: "{{ item.0 }}"
-        vc: "{{ item.1 }}"
+        site: "{{ item.0 }}"  # noqa: var-naming[no-role-prefix]
+        vc: "{{ item.1 }}"  # noqa: var-naming[no-role-prefix]

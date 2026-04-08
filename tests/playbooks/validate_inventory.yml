@@ -16,9 +16,15 @@
 
     - name: Build flattened object lists
       ansible.builtin.set_fact:
-        all_vcenters: "{{ vmware_sites | map(attribute='vcenters') | list | flatten }}"
-        all_datacenters: "{{ vmware_sites | map(attribute='vcenters') | list | flatten | map(attribute='datacenters') | list | flatten }}"
-        all_clusters: "{{ vmware_sites | map(attribute='vcenters') | list | flatten | map(attribute='datacenters') | list | flatten | map(attribute='clusters') | list | flatten }}"
+        all_vcenters: >-
+          {{ vmware_sites | map(attribute='vcenters') | list | flatten }}
+        all_datacenters: >-
+          {{ vmware_sites | map(attribute='vcenters') | list | flatten
+          | map(attribute='datacenters') | list | flatten }}
+        all_clusters: >-
+          {{ vmware_sites | map(attribute='vcenters') | list | flatten
+          | map(attribute='datacenters') | list | flatten
+          | map(attribute='clusters') | list | flatten }}
 
     - name: Validate each site
       ansible.builtin.assert:
