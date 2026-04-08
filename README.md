@@ -12,7 +12,7 @@ Ce repository permet de gérer de façon déclarative :
 - Datacenters
 - Clusters (HA/DRS + règles d'affinité / anti-affinité)
 - dvSwitch et dvPortgroups
-- Hôtes ESXi (join cluster, DNS, NTP, VMkernel, multipathing, hardening)
+- Hôtes ESXi (join cluster, DNS, NTP, VMkernel, hardening)
 - Paramètres syslog ESXi
 
 La structure est pensée pour être **multi-site** et **multi-vCenter** via une variable racine `vmware_sites`.
@@ -163,7 +163,7 @@ Le flux actuel est :
    - `dvswitch`
 4. `esxi_host`
    - join cluster
-   - DNS / NTP / VMkernel / multipathing
+   - DNS / NTP / VMkernel
    - `esxi_hardening`
    - `logging_syslog`
 5. `dvportgroup`
@@ -227,6 +227,9 @@ pwsh ./scripts/export-config.ps1 \
 ## 10) Limites connues
 
 - Certains paramètres des modules `community.vmware` peuvent varier selon la version de collection et la version vSphere.
+- Le **multipathing ESXi n'est pas supporté** dans ce repository :
+  aucun module Ansible VMware supporté n'est disponible dans les collections installées pour couvrir ce besoin de façon fiable.
+  Les clés d'inventaire `multipath_policy` et `multipath_policies` sont volontairement refusées par le preflight et le rôle `esxi_host`.
 - Les rôles de hardening fournis sont un **socle initial**, pas un benchmark de conformité complet (CIS/ANSSI/etc.).
 - Le scénario Molecule est minimal et ne simule pas un vrai backend vSphere.
 - Sans `ansible-playbook`/collections installés localement, seuls des checks de syntaxe basiques sont possibles.
@@ -273,7 +276,7 @@ ansible-playbook tests/playbooks/validate_inventory.yml -e inventory_fixture=tes
 
 ## 13) Nouveautés de baseline sécurité et observabilité
 
-- **Preflight renforcé**: validation complète de `vmware_sites` (sites, vCenters, datacenters, clusters, hôtes, multipathing datastore-based) avec messages d'erreur lisibles.
+- **Preflight renforcé**: validation complète de `vmware_sites` (sites, vCenters, datacenters, clusters, hôtes) avec messages d'erreur lisibles, et refus explicite des clés multipathing non supportées.
 - **Rôle `vcenter_hardening`**: baseline TLS/certificats, bannière légale, comptes locaux minimaux, permissions via groupes, paramètres de journalisation.
 - **Rôle `esxi_hardening`**: lockdown mode, options SSH/ESXi Shell, bannière, NTP, syslog, options avancées documentées.
 - **Rôle `dvswitch`**: création des vSphere Distributed Switches avant les dvPortgroups (nom, version, uplinks, MTU, discovery, health checks).

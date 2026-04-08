@@ -133,9 +133,6 @@ vmware_sites:
                     syslog_target: "udp://10.10.0.20:514"
                     advanced_options:
                       UserVars.SuppressShellWarning: 0
-                    multipath_policies:
-                      - datastore: ds-prod-01
-                        policy: VMW_PSP_RR
                 dvportgroups:
                   - name: dvpg-vmotion
                     dvswitch_name: dvs-paris-core
