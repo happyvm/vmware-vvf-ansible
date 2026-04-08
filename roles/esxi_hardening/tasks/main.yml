@@ -1,0 +1,23 @@
+---
+- name: Enable ESXi lockdown mode when requested
+  community.vmware.vmware_host_lockdown:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    esxi_hostname: "{{ esxi.hostname }}"
+    lockdown_mode: "{{ esxi.lockdown_mode | default('normal') }}"
+    state: present
+  when: esxi.lockdown_mode is defined
+  delegate_to: localhost
+
+- name: Apply ESXi hardening advanced options
+  community.vmware.vmware_host_config_manager:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    esxi_hostname: "{{ esxi.hostname }}"
+    options: "{{ esxi.advanced_options | default({}) }}"
+  when: esxi.advanced_options is defined
+  delegate_to: localhost

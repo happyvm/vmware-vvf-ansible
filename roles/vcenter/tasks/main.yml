@@ -42,6 +42,10 @@
     - item.role is defined
   delegate_to: localhost
 
+- name: Appliquer le hardening vCenter
+  ansible.builtin.include_role:
+    name: vcenter_hardening
+
 - name: Configurer les datacenters définis
   ansible.builtin.include_role:
     name: datacenter

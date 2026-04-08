@@ -1,93 +1,80 @@
 # vmware-vvf-ansible
 
-Code Ansible prêt à l'emploi pour configurer VMware vSphere de manière **multi-site** et **multi-vCenter** :
+Code Ansible pour configurer VMware vSphere en **multi-site** et **multi-vCenter** :
 
-- vCenter : comptes et rôles locaux
+- vCenter : comptes, rôles, hardening
 - Datacenter
-- Clusters : HA, DRS, règles d'affinité / anti-affinité VM
-- Nœuds ESXi : NTP, DNS, interfaces VMkernel, multipathing
+- Clusters : HA/DRS, règles d'affinité/anti-affinité, vDS
+- Nœuds ESXi : NTP, DNS, VMkernel, multipathing, hardening
 - dvPortgroups
-- Helpers d'import de l'existant en **bash** et **PowerShell**
+- Logging / syslog ESXi
+- Helpers d'import de configuration existante (bash + PowerShell)
 
-## 1) Pré-requis
+## Ordre de mise en place recommandé
 
-- Ansible >= 2.14
-- Collection Ansible : `community.vmware`
-- Python : `pyvmomi`
-- Pour export bash : `govc`, `jq`, `yq`
-- Pour export PowerShell : module `VMware.PowerCLI`
+1. `.gitignore`
+2. `.github/workflows/ci.yml`
+3. `.ansible-lint`, `.yamllint`, `.pre-commit-config.yaml`
+4. `requirements.txt`
+5. `playbooks/preflight.yml`
+6. `roles/vcenter_hardening/`
+7. `roles/esxi_hardening/`
+8. `roles/dvswitch/`
+9. `roles/logging_syslog/`
+10. `molecule/` (tests minimaux)
 
-Installation des collections :
+## Pré-requis
+
+- Python 3.11+
+- `pip install -r requirements.txt`
+- Collection Ansible VMware :
 
 ```bash
 ansible-galaxy collection install -r collections/requirements.yml
 ```
 
-## 2) Structure
+## Structure
 
 ```text
 .
-├── ansible.cfg
-├── collections/requirements.yml
-├── inventories/production/
-│   ├── hosts.yml
-│   └── group_vars/
-│       ├── all.yml
-│       └── vault.example.yml
-├── playbooks/site.yml
+├── .github/workflows/ci.yml
+├── .ansible-lint
+├── .yamllint
+├── .pre-commit-config.yaml
+├── requirements.txt
+├── playbooks/
+│   ├── preflight.yml
+│   └── site.yml
 ├── roles/
 │   ├── vcenter/
 │   ├── datacenter/
 │   ├── cluster/
 │   ├── esxi_host/
-│   └── dvportgroup/
-└── scripts/
-    ├── export-config.sh
-    └── export-config.ps1
+│   ├── dvportgroup/
+│   ├── vcenter_hardening/
+│   ├── esxi_hardening/
+│   ├── dvswitch/
+│   └── logging_syslog/
+└── molecule/default/
 ```
 
-## 3) Variables multi-site / multi-vCenter
+## Exécution
 
-Le modèle principal est dans :
-
-- `inventories/production/group_vars/all.yml`
-
-Le principe :
-
-- `vmware_sites[]`
-  - `vcenters[]`
-    - `datacenters[]`
-      - `clusters[]`
-        - `hosts[]`
-        - `dvportgroups[]`
-
-Vous pouvez dupliquer les blocs pour ajouter autant de sites/vCenters que nécessaire.
-
-## 4) Secrets
-
-Exemple de variables sensibles :
-
-- `inventories/production/group_vars/vault.example.yml`
-
-Recommandé : utiliser **Ansible Vault**.
+### 1) Préflight
 
 ```bash
-ansible-vault create inventories/production/group_vars/vault.yml
+ansible-playbook playbooks/preflight.yml
 ```
 
-## 5) Exécution
+### 2) Déploiement
 
 ```bash
 ansible-playbook playbooks/site.yml
 ```
 
-## 6) Import de la configuration existante (helper)
+## Import de l'existant
 
-### 6.1 Bash (`govc`)
-
-Script : `scripts/export-config.sh`
-
-Exemple :
+### Bash
 
 ```bash
 export GOVC_URL='https://vcsa-paris.example.local/sdk'
@@ -100,13 +87,7 @@ scripts/export-config.sh \
   -v vcsa-paris
 ```
 
-Le script génère un YAML de base réutilisable dans les variables Ansible.
-
-### 6.2 PowerShell (`VMware.PowerCLI`)
-
-Script : `scripts/export-config.ps1`
-
-Exemple :
+### PowerShell
 
 ```powershell
 pwsh ./scripts/export-config.ps1 \
@@ -115,9 +96,3 @@ pwsh ./scripts/export-config.ps1 \
   -VCenterAlias vcsa-paris \
   -VCenterServer vcsa-paris.example.local
 ```
-
-## 7) Notes importantes
-
-- Les modules `community.vmware` s'exécutent depuis la machine Ansible et se connectent aux APIs vCenter/ESXi.
-- Adaptez les noms de politiques multipathing, services VMkernel et options cluster selon votre standard.
-- Commencez par un environnement de test avant production.

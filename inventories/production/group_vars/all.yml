@@ -9,6 +9,9 @@ vmware_sites:
         username: "{{ vault_vcenter_paris_username }}"
         password: "{{ vault_vcenter_paris_password }}"
         validate_certs: false
+        hardening_settings:
+          config.vpxd.session.timeout: 30
+          config.vpxd.sso.maxConnections: 100
         local_roles:
           - name: ansible-operator-role
             privileges:
@@ -47,6 +50,11 @@ vmware_sites:
                       vms:
                         - db01
                         - db02
+                dvswitches:
+                  - name: dvs-paris-core
+                    version: "8.0.0"
+                    mtu: 9000
+                    uplink_quantity: 2
                 hosts:
                   - hostname: esxi01.paris.example.local
                     username: root
@@ -68,6 +76,10 @@ vmware_sites:
                         services:
                           vMotion: true
                           Provisioning: false
+                    lockdown_mode: normal
+                    syslog_target: "udp://10.10.0.20:514"
+                    advanced_options:
+                      UserVars.SuppressShellWarning: 0
                     multipath_policy:
                       - device: naa.60060160a0b03f00be8d8b3cab4de011
                         policy: VMW_PSP_RR

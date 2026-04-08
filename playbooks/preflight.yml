@@ -1,0 +1,38 @@
+---
+- name: Preflight VMware automation
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    required_bins:
+      - python3
+
+  tasks:
+    - name: Verify vmware_sites variable exists
+      ansible.builtin.assert:
+        that:
+          - vmware_sites is defined
+          - vmware_sites | length > 0
+        fail_msg: "Définissez vmware_sites dans inventories/*/group_vars/all.yml"
+
+    - name: Verify first-level keys for each site
+      ansible.builtin.assert:
+        that:
+          - item.name is defined
+          - item.vcenters is defined
+          - item.vcenters | length > 0
+        fail_msg: "Site invalide: {{ item | to_nice_yaml }}"
+      loop: "{{ vmware_sites }}"
+      loop_control:
+        label: "{{ item.name | default('site-unknown') }}"
+
+    - name: Check required binaries
+      ansible.builtin.command: "which {{ item }}"
+      changed_when: false
+      loop: "{{ required_bins }}"
+
+    - name: Show preflight summary
+      ansible.builtin.debug:
+        msg:
+          - "Sites à traiter: {{ vmware_sites | map(attribute='name') | list }}"
+          - "vCenters total: {{ vmware_sites | map(attribute='vcenters') | map('length') | sum }}"

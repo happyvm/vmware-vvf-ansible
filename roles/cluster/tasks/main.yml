@@ -51,6 +51,10 @@
     label: "{{ cluster.name }} / {{ item.name }}"
   delegate_to: localhost
 
+- name: Configurer les vDS du cluster
+  ansible.builtin.include_role:
+    name: dvswitch
+
 - name: Configurer les hôtes ESXi du cluster
   ansible.builtin.include_role:
     name: esxi_host

@@ -1,0 +1,10 @@
+---
+- name: Apply vCenter hardening advanced settings
+  community.vmware.vmware_vcenter_settings:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    settings: "{{ vc.hardening_settings | default({}) }}"
+  when: vc.hardening_settings is defined
+  delegate_to: localhost

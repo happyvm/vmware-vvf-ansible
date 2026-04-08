@@ -75,3 +75,11 @@
   loop_control:
     label: "{{ esxi.hostname }} / {{ item.device }}"
   delegate_to: localhost
+
+- name: Appliquer le hardening ESXi
+  ansible.builtin.include_role:
+    name: esxi_hardening
+
+- name: Configurer le syslog ESXi
+  ansible.builtin.include_role:
+    name: logging_syslog
