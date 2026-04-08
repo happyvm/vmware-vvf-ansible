@@ -122,26 +122,19 @@
       loop_control:
         label: "{{ item.0.name | default('cluster-unknown') }} / {{ item.1.hostname | default('esxi-unknown') }}"
 
-    - name: Validate multipathing structure (datastore-centric)
+    - name: Validate unsupported multipathing keys are absent
       ansible.builtin.assert:
         that:
-          - (item.1.datastore is defined) or (item.1.device is defined)
-          - item.1.policy is defined
-          - item.1.policy | string | length > 0
-          - (item.1.datastore | default(item.1.device)) is not match('^naa\\.')
+          - item.1.multipath_policy is not defined
+          - item.1.multipath_policies is not defined
         fail_msg: >-
-          Multipathing invalide pour {{ item.0.hostname }}.
-          Utiliser un datastore (ex: ds-prod-01), pas un device naa.*,
-          et fournir policy.
-      loop: >-
-        {{
-          (preflight_clusters | map(attribute='hosts') | list | flatten)
-          | selectattr('multipath_policies', 'defined')
-          | list
-          | subelements('multipath_policies', skip_missing=True)
-        }}
+          Multipathing non supporté pour {{ item.1.hostname }}.
+          Aucun module Ansible VMware supporté n'est disponible dans les
+          collections installées. Supprimez les clés multipath_policy /
+          multipath_policies de l'inventaire.
+      loop: "{{ preflight_clusters | subelements('hosts', skip_missing=True) }}"
       loop_control:
-        label: "{{ item.0.hostname }} / {{ item.1.datastore | default(item.1.device | default('missing')) }}"
+        label: "{{ item.0.name | default('cluster-unknown') }} / {{ item.1.hostname | default('esxi-unknown') }}"
 
     - name: Check required local binaries
       ansible.builtin.command: "which {{ item }}"

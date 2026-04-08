@@ -35,7 +35,6 @@ try {
                     search_domains = @()
                     ntp_servers = @()
                     vmkernel_interfaces = @()
-                    multipath_policy = @()
                 }
             }
 

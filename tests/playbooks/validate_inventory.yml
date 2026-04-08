@@ -71,3 +71,15 @@
       loop: "{{ all_clusters }}"
       loop_control:
         label: "{{ item.name }}"
+
+    - name: Ensure unsupported multipathing keys are absent
+      ansible.builtin.assert:
+        that:
+          - item.1.multipath_policy is not defined
+          - item.1.multipath_policies is not defined
+        fail_msg: >-
+          Multipathing non supporté pour {{ item.1.hostname | default('esxi-unknown') }}.
+          Supprimez multipath_policy / multipath_policies de l'inventaire.
+      loop: "{{ all_clusters | subelements('hosts', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.name }} / {{ item.1.hostname | default('esxi-unknown') }}"

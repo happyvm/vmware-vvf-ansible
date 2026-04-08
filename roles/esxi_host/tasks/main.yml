@@ -61,15 +61,16 @@
     label: "{{ esxi.hostname }} / {{ item.name }}"
   delegate_to: localhost
 
-- name: Configurer les politiques de multipathing
-  ansible.builtin.debug:
-    msg: >-
-      Skipping multipathing configuration for {{ esxi.hostname }} datastore
-      {{ item.device }} because no supported module is currently available in
-      installed VMware collections.
-  loop: "{{ esxi.multipath_policy | default([]) }}"
-  loop_control:
-    label: "{{ esxi.hostname }} / {{ item.device }}"
+- name: Refuser la configuration multipathing non supportée
+  ansible.builtin.assert:
+    that:
+      - esxi.multipath_policy is not defined
+      - esxi.multipath_policies is not defined
+    fail_msg: >-
+      Multipathing non supporté pour {{ esxi.hostname }}.
+      Aucun module Ansible VMware supporté n'est disponible dans les
+      collections installées. Supprimez multipath_policy /
+      multipath_policies de l'inventaire.
 
 - name: Appliquer le hardening ESXi
   ansible.builtin.include_role:
