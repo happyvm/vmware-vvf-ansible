@@ -4,8 +4,12 @@
     vcenter_hardening_settings: >-
       {{
         {
-          'config.vpxd.security.hostValidation': (vc.hardening.tls.mode | default(vcenter_hardening_defaults.tls.mode) == 'strict') | ternary('true', 'false'),
-          'config.vpxd.sso.strictCertValidation': (vc.validate_certs | default(vcenter_hardening_defaults.validate_certs)) | ternary('true', 'false'),
+          'config.vpxd.security.hostValidation': (
+            vc.hardening.tls.mode | default(vcenter_hardening_defaults.tls.mode) == 'strict'
+          ) | ternary('true', 'false'),
+          'config.vpxd.sso.strictCertValidation': (
+            vc.validate_certs | default(vcenter_hardening_defaults.validate_certs)
+          ) | ternary('true', 'false'),
           'VirtualCenter.InstanceName': (vc.hardening.legal_banner | default(vcenter_hardening_defaults.legal_banner))
         }
         | combine(vc.hardening.settings | default({}), recursive=True)

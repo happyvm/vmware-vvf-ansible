@@ -41,7 +41,15 @@
     username: "{{ vc.username }}"
     password: "{{ vc.password }}"
     validate_certs: "{{ vc.validate_certs | default(false) }}"
-    object_name: "{{ item.object_name | default(vc.datacenters[0].name if (vc.datacenters | default([]) | length > 0) else 'Datacenters') }}"
+    object_name: >-
+      {{
+        item.object_name
+        | default(
+          vc.datacenters[0].name
+          if (vc.datacenters | default([]) | length > 0)
+          else 'Datacenters'
+        )
+      }}
     object_type: "{{ item.object_type | default('Datacenter') }}"
     principal: "{{ item.group_name }}"
     group: true

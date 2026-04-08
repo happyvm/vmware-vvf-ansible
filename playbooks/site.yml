@@ -1,5 +1,6 @@
 ---
-- ansible.builtin.import_playbook: preflight.yml
+- name: Import preflight checks
+  ansible.builtin.import_playbook: preflight.yml
 
 - name: Provisionnement VMware multi-site / multi-vCenter
   hosts: localhost
