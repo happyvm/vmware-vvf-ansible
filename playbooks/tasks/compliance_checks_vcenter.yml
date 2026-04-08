@@ -1,0 +1,7 @@
+---
+- name: Run compliance checks for each datacenter in vCenter
+  ansible.builtin.include_tasks: compliance_checks_datacenter.yml
+  loop: "{{ vc.datacenters | default([]) }}"
+  loop_control:
+    loop_var: dc
+    label: "{{ site.name }} / {{ vc.name }} / {{ dc.name }}"

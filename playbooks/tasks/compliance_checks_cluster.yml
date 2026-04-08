@@ -1,0 +1,8 @@
+---
+- name: Run compliance checks for each ESXi host in cluster
+  ansible.builtin.include_role:
+    name: compliance_checks
+  loop: "{{ cluster.hosts | default([]) }}"
+  loop_control:
+    loop_var: esxi
+    label: "{{ site.name }} / {{ vc.name }} / {{ dc.name }} / {{ cluster.name }} / {{ esxi.hostname }}"

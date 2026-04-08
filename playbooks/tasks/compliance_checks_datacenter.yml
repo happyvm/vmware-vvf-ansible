@@ -1,0 +1,7 @@
+---
+- name: Run compliance checks for each cluster in datacenter
+  ansible.builtin.include_tasks: compliance_checks_cluster.yml
+  loop: "{{ dc.clusters | default([]) }}"
+  loop_control:
+    loop_var: cluster
+    label: "{{ site.name }} / {{ vc.name }} / {{ dc.name }} / {{ cluster.name }}"

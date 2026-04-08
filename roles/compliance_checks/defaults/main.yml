@@ -1,0 +1,3 @@
+---
+compliance_checks_fail_on_non_compliant: false
+compliance_checks_report_path: ""
