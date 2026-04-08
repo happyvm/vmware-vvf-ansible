@@ -1,0 +1,19 @@
+---
+- name: Créer le datacenter
+  community.vmware.vmware_datacenter:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    datacenter_name: "{{ dc.name }}"
+    state: present
+  delegate_to: localhost
+
+- name: Configurer les clusters du datacenter
+  ansible.builtin.include_role:
+    name: cluster
+  loop: "{{ dc.clusters | default([]) }}"
+  loop_control:
+    label: "{{ dc.name }} / {{ item.name }}"
+  vars:
+    cluster: "{{ item }}"

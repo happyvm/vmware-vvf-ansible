@@ -1,0 +1,30 @@
+---
+dependency:
+  name: galaxy
+
+driver:
+  name: delegated
+
+platforms:
+  - name: instance
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_CONFIG: ${MOLECULE_PROJECT_DIRECTORY}/ansible.cfg
+  inventory:
+    hosts:
+      all:
+        hosts:
+          localhost:
+            ansible_connection: local
+  playbooks:
+    converge: converge.yml
+
+scenario:
+  name: default
+
+test_sequence:
+  - dependency
+  - syntax
+  - converge

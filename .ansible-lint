@@ -1,0 +1,9 @@
+---
+profile: production
+exclude_paths:
+  - .venv/
+  - .molecule/
+use_default_rules: true
+warn_list:
+  - experimental
+  - fqcn[deep]

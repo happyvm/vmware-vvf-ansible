@@ -1,0 +1,26 @@
+---
+- name: Provisionnement VMware multi-site / multi-vCenter
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - community.vmware
+
+  vars:
+    selected_sites: "{{ vmware_sites | default([]) }}"
+
+  tasks:
+    - name: Vérifier que la variable vmware_sites est fournie
+      ansible.builtin.assert:
+        that:
+          - selected_sites | length > 0
+        fail_msg: "La variable vmware_sites est vide."
+
+    - name: Configurer chaque vCenter de chaque site
+      ansible.builtin.include_role:
+        name: vcenter
+      loop: "{{ selected_sites | subelements('vcenters') }}"
+      loop_control:
+        label: "{{ item.0.name }} / {{ item.1.name }}"
+      vars:
+        site: "{{ item.0 }}"
+        vc: "{{ item.1 }}"

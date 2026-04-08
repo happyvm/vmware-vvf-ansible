@@ -1,0 +1,12 @@
+---
+- name: Configure ESXi syslog destination
+  community.vmware.vmware_host_config_manager:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    esxi_hostname: "{{ esxi.hostname }}"
+    options:
+      Syslog.global.logHost: "{{ esxi.syslog_target }}"
+  when: esxi.syslog_target is defined
+  delegate_to: localhost
