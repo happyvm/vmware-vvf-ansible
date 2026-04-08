@@ -1,13 +1,13 @@
 ---
 - name: Ajouter l'hôte ESXi au cluster
-  community.vmware.vmware_host:
+  vmware.vmware.esxi_host:
     hostname: "{{ vc.hostname }}"
     username: "{{ vc.username }}"
     password: "{{ vc.password }}"
     validate_certs: "{{ vc.validate_certs | default(false) }}"
     datacenter_name: "{{ dc.name }}"
     cluster_name: "{{ cluster.name }}"
-    esxi_hostname: "{{ esxi.hostname }}"
+    esxi_host_name: "{{ esxi.hostname }}"
     esxi_username: "{{ esxi.username }}"
     esxi_password: "{{ esxi.password }}"
     state: present
