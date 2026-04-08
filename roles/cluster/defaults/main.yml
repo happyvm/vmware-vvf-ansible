@@ -1,0 +1,9 @@
+---
+cluster_defaults:
+  drs_enabled: true
+  ha_enabled: true
+  ha:
+    admission_control_enabled: true
+    host_monitoring: enabled
+    isolation_response: powerOff
+    vm_restart_priority: medium

@@ -1,0 +1,8 @@
+---
+dvportgroup_defaults:
+  port_binding: static
+  num_ports: 128
+  security:
+    promiscuous_mode: false
+    forged_transmits: false
+    mac_changes: false

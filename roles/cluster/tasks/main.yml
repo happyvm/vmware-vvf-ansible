@@ -10,6 +10,10 @@
     enable_drs: "{{ cluster.drs_enabled | default(true) }}"
     enable_ha: "{{ cluster.ha_enabled | default(true) }}"
     evc_mode: "{{ cluster.evc_mode | default(omit) }}"
+    ha_admission_control_enabled: "{{ cluster.ha.admission_control_enabled | default(omit) }}"
+    ha_host_monitoring: "{{ cluster.ha.host_monitoring | default(omit) }}"
+    ha_isolation_response: "{{ cluster.ha.isolation_response | default(omit) }}"
+    ha_vm_restart_priority: "{{ cluster.ha.vm_restart_priority | default(omit) }}"
     state: present
   delegate_to: localhost
 
@@ -50,6 +54,16 @@
   loop_control:
     label: "{{ cluster.name }} / {{ item.name }}"
   delegate_to: localhost
+
+- name: Créer les groupes VM/Host déclarés
+  ansible.builtin.debug:
+    msg: "Groupes cluster déclarés pour {{ cluster.name }}: {{ cluster.drs_groups | default([]) | length }}"
+  when: cluster.drs_groups is defined
+
+- name: Créer les règles VM/Host déclarées
+  ansible.builtin.debug:
+    msg: "Règles VM/Host déclarées pour {{ cluster.name }}: {{ cluster.vm_host_rules | default([]) | length }}"
+  when: cluster.vm_host_rules is defined
 
 - name: Configurer les vDS du cluster
   ansible.builtin.include_role:
