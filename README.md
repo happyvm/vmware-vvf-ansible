@@ -226,7 +226,7 @@ pwsh ./scripts/export-config.ps1 \
 
 ## 10) Limites connues
 
-- Certains paramètres des modules `community.vmware` peuvent varier selon la version de collection et la version vSphere.
+- Le standard du repository est `vmware.vmware` pour les domaines cluster/ESXi lifecycle ; `community.vmware` est conservé uniquement pour les modules sans équivalent VMware clair (ex. rôles/permissions locaux vCenter, vDS/dvPortgroup, certaines règles DRS).
 - Le **multipathing ESXi n'est pas supporté** dans ce repository :
   aucun module Ansible VMware supporté n'est disponible dans les collections installées pour couvrir ce besoin de façon fiable.
   Les clés d'inventaire `multipath_policy` et `multipath_policies` sont volontairement refusées par le preflight et le rôle `esxi_host`.
