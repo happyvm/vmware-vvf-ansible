@@ -34,3 +34,9 @@ jobs:
 
       - name: Syntax check site
         run: ansible-playbook --syntax-check playbooks/site.yml
+
+      - name: Validate simple inventory fixture
+        run: ansible-playbook tests/playbooks/validate_inventory.yml -e inventory_fixture=tests/inventory/simple.yml
+
+      - name: Validate multi-site inventory fixture
+        run: ansible-playbook tests/playbooks/validate_inventory.yml -e inventory_fixture=tests/inventory/multisite.yml

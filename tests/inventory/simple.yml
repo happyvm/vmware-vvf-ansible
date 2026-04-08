@@ -1,0 +1,23 @@
+---
+vmware_sites:
+  - name: site-simple
+    vcenters:
+      - name: vcsa-simple
+        hostname: vcsa-simple.example.local
+        username: automation@vsphere.local
+        password: dummy
+        validate_certs: false
+        local_roles: []
+        local_accounts: []
+        datacenters:
+          - name: dc-simple
+            clusters:
+              - name: cl-simple
+                drs_enabled: true
+                ha_enabled: true
+                host_rules:
+                  affinity: []
+                  anti_affinity: []
+                dvswitches: []
+                hosts: []
+                dvportgroups: []
