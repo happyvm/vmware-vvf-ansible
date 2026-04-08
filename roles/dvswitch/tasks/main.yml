@@ -1,4 +1,14 @@
 ---
+- name: Validate dvSwitch model
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name | string | length > 0
+    fail_msg: "dvSwitch invalide: name requis."
+  loop: "{{ cluster.dvswitches | default([]) }}"
+  loop_control:
+    label: "{{ item.name | default('dvs-unknown') }}"
+
 - name: Create or update distributed switches
   community.vmware.vmware_dvswitch:
     hostname: "{{ vc.hostname }}"
@@ -7,11 +17,14 @@
     validate_certs: "{{ vc.validate_certs | default(false) }}"
     datacenter_name: "{{ dc.name }}"
     switch_name: "{{ item.name }}"
-    version: "{{ item.version | default(omit) }}"
-    mtu: "{{ item.mtu | default(1500) }}"
-    uplink_quantity: "{{ item.uplink_quantity | default(2) }}"
-    discovery_protocol: "{{ item.discovery_protocol | default('cdp') }}"
-    discovery_operation: "{{ item.discovery_operation | default('both') }}"
+    version: "{{ item.version | default(dvswitch_defaults.version) }}"
+    mtu: "{{ item.mtu | default(dvswitch_defaults.mtu) }}"
+    uplink_quantity: "{{ item.uplink_quantity | default(dvswitch_defaults.uplink_quantity) }}"
+    discovery_protocol: "{{ item.discovery_protocol | default(dvswitch_defaults.discovery_protocol) }}"
+    discovery_operation: "{{ item.discovery_operation | default(dvswitch_defaults.discovery_operation) }}"
+    health_check:
+      vlan_mtu: "{{ item.health_check_vlan_mtu | default(false) }}"
+      teaming_failover: "{{ item.health_check_teaming | default(false) }}"
     state: present
   loop: "{{ cluster.dvswitches | default([]) }}"
   loop_control:

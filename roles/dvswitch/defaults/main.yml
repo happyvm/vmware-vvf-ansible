@@ -1,0 +1,7 @@
+---
+dvswitch_defaults:
+  version: "8.0.0"
+  mtu: 1500
+  uplink_quantity: 2
+  discovery_protocol: cdp
+  discovery_operation: both

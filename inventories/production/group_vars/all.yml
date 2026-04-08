@@ -1,4 +1,16 @@
 ---
+# Observabilité globale (vCenter + ESXi)
+vmware_observability:
+  ntp_servers:
+    - 0.pool.ntp.org
+    - 1.pool.ntp.org
+  syslog:
+    esxi_target: "udp://10.10.0.20:514"
+    per_host_dir: true
+  vcenter:
+    log_level: info
+    event_retention_days: 30
+
 # Structure de référence multi-site / multi-vCenter.
 # Dupliquez les sections pour vos sites et remplacez les exemples.
 vmware_sites:
@@ -9,9 +21,14 @@ vmware_sites:
         username: "{{ vault_vcenter_paris_username }}"
         password: "{{ vault_vcenter_paris_password }}"
         validate_certs: false
-        hardening_settings:
-          config.vpxd.session.timeout: 30
-          config.vpxd.sso.maxConnections: 100
+        hardening:
+          tls:
+            mode: strict
+          legal_banner: "Authorized access only. Activities may be monitored."
+          local_accounts_minimal: true
+          settings:
+            config.vpxd.session.timeout: 30
+            config.vpxd.sso.maxConnections: 100
         local_roles:
           - name: ansible-operator-role
             privileges:
@@ -24,17 +41,45 @@ vmware_sites:
               - Global.LogEvent
               - Global.ManageCustomFields
               - Global.SetCustomField
+        group_permissions:
+          - group_name: "EXAMPLE\\GG-vSphere-Operators"
+            role: ansible-operator-role
+            object_type: Datacenter
+            object_name: dc-paris-01
+            propagate: true
         local_accounts:
-          - name: ansible-operator
+          - name: ansible-operator-breakglass
             password: "{{ vault_vcenter_paris_operator_password }}"
             role: ansible-operator-role
+            required: true
         datacenters:
           - name: dc-paris-01
             clusters:
               - name: cl-paris-prod
                 drs_enabled: true
                 ha_enabled: true
-                evc_mode: "intel-broadwell"
+                evc_mode: intel-broadwell
+                ha:
+                  admission_control_enabled: true
+                  host_monitoring: enabled
+                  isolation_response: powerOff
+                  vm_restart_priority: medium
+                drs_groups:
+                  - name: vm-group-critical
+                    type: vm
+                    members:
+                      - app01
+                      - app02
+                  - name: host-group-a
+                    type: host
+                    members:
+                      - esxi01.paris.example.local
+                vm_host_rules:
+                  - name: critical-on-host-group-a
+                    vm_group: vm-group-critical
+                    host_group: host-group-a
+                    affinity: true
+                    mandatory: false
                 host_rules:
                   affinity:
                     - name: app-tier-affinity
@@ -52,9 +97,13 @@ vmware_sites:
                         - db02
                 dvswitches:
                   - name: dvs-paris-core
-                    version: "8.0.0"
+                    version: 8.0.0
                     mtu: 9000
                     uplink_quantity: 2
+                    discovery_protocol: cdp
+                    discovery_operation: both
+                    health_check_vlan_mtu: true
+                    health_check_teaming: true
                 hosts:
                   - hostname: esxi01.paris.example.local
                     username: root
@@ -76,12 +125,16 @@ vmware_sites:
                         services:
                           vMotion: true
                           Provisioning: false
-                    lockdown_mode: normal
+                    hardening:
+                      lockdown_mode: normal
+                      ssh_enabled: false
+                      esxi_shell_timeout: 900
+                      banner: "Authorized access only"
                     syslog_target: "udp://10.10.0.20:514"
                     advanced_options:
                       UserVars.SuppressShellWarning: 0
-                    multipath_policy:
-                      - device: naa.60060160a0b03f00be8d8b3cab4de011
+                    multipath_policies:
+                      - datastore: ds-prod-01
                         policy: VMW_PSP_RR
                 dvportgroups:
                   - name: dvpg-vmotion
@@ -89,8 +142,17 @@ vmware_sites:
                     vlan_id: 120
                     port_binding: static
                     num_ports: 64
+                    mtu: 9000
+                    security:
+                      forged_transmits: false
+                      mac_changes: false
+                      promiscuous_mode: false
                   - name: dvpg-management
                     dvswitch_name: dvs-paris-core
                     vlan_id: 110
                     port_binding: static
                     num_ports: 128
+                    security:
+                      forged_transmits: false
+                      mac_changes: false
+                      promiscuous_mode: false

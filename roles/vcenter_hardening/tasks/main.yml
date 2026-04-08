@@ -1,10 +1,33 @@
 ---
+- name: Build vCenter hardening settings map
+  ansible.builtin.set_fact:
+    vcenter_hardening_settings: >-
+      {{
+        {
+          'config.vpxd.security.hostValidation': (vc.hardening.tls.mode | default(vcenter_hardening_defaults.tls.mode) == 'strict') | ternary('true', 'false'),
+          'config.vpxd.sso.strictCertValidation': (vc.validate_certs | default(vcenter_hardening_defaults.validate_certs)) | ternary('true', 'false'),
+          'VirtualCenter.InstanceName': (vc.hardening.legal_banner | default(vcenter_hardening_defaults.legal_banner))
+        }
+        | combine(vc.hardening.settings | default({}), recursive=True)
+      }}
+
 - name: Apply vCenter hardening advanced settings
   community.vmware.vmware_vcenter_settings:
     hostname: "{{ vc.hostname }}"
     username: "{{ vc.username }}"
     password: "{{ vc.password }}"
-    validate_certs: "{{ vc.validate_certs | default(false) }}"
-    settings: "{{ vc.hardening_settings | default({}) }}"
-  when: vc.hardening_settings is defined
+    validate_certs: "{{ vc.validate_certs | default(vcenter_hardening_defaults.validate_certs) }}"
+    settings: "{{ vcenter_hardening_settings }}"
+  delegate_to: localhost
+
+- name: Apply vCenter observability settings
+  community.vmware.vmware_vcenter_settings:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(vcenter_hardening_defaults.validate_certs) }}"
+    settings:
+      config.log.level: "{{ vmware_observability.vcenter.log_level | default('info') }}"
+      config.vpxd.event.maxAge: "{{ vmware_observability.vcenter.event_retention_days | default(30) }}"
+  when: vmware_observability is defined
   delegate_to: localhost

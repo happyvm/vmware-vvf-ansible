@@ -7,6 +7,7 @@
     validate_certs: "{{ vc.validate_certs | default(false) }}"
     esxi_hostname: "{{ esxi.hostname }}"
     options:
-      Syslog.global.logHost: "{{ esxi.syslog_target }}"
-  when: esxi.syslog_target is defined
+      Syslog.global.logHost: "{{ esxi.syslog_target | default(vmware_observability.syslog.esxi_target | default(omit)) }}"
+      Syslog.global.logDirUnique: "{{ (vmware_observability.syslog.per_host_dir | default(true)) | ternary('true', 'false') }}"
+  when: esxi.syslog_target is defined or (vmware_observability is defined and vmware_observability.syslog is defined and vmware_observability.syslog.esxi_target is defined)
   delegate_to: localhost

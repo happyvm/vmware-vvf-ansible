@@ -1,0 +1,10 @@
+---
+vcenter_hardening_defaults:
+  validate_certs: true
+  legal_banner: "Authorized access only. Activities may be monitored."
+  local_accounts_minimal: true
+  enforce_group_based_permissions: true
+  tls:
+    mode: strict
+  logging:
+    events_enabled: true

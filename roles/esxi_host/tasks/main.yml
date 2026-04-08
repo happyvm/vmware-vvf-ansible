@@ -34,9 +34,9 @@
     password: "{{ vc.password }}"
     validate_certs: "{{ vc.validate_certs | default(false) }}"
     esxi_hostname: "{{ esxi.hostname }}"
-    ntp_servers: "{{ esxi.ntp_servers | default([]) }}"
+    ntp_servers: "{{ esxi.ntp_servers | default(vmware_observability.ntp_servers | default([])) }}"
     state: present
-  when: esxi.ntp_servers is defined
+  when: esxi.ntp_servers is defined or (vmware_observability is defined and vmware_observability.ntp_servers is defined)
   delegate_to: localhost
 
 - name: Configurer les interfaces VMkernel

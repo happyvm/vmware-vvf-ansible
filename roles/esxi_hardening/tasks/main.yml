@@ -6,9 +6,8 @@
     password: "{{ vc.password }}"
     validate_certs: "{{ vc.validate_certs | default(false) }}"
     esxi_hostname: "{{ esxi.hostname }}"
-    lockdown_mode: "{{ esxi.lockdown_mode | default('normal') }}"
+    lockdown_mode: "{{ esxi.hardening.lockdown_mode | default(esxi.lockdown_mode | default(esxi_hardening_defaults.lockdown_mode)) }}"
     state: present
-  when: esxi.lockdown_mode is defined
   delegate_to: localhost
 
 - name: Apply ESXi hardening advanced options
@@ -18,6 +17,15 @@
     password: "{{ vc.password }}"
     validate_certs: "{{ vc.validate_certs | default(false) }}"
     esxi_hostname: "{{ esxi.hostname }}"
-    options: "{{ esxi.advanced_options | default({}) }}"
-  when: esxi.advanced_options is defined
+    options:
+      UserVars.SuppressShellWarning: "{{ (esxi.hardening.suppress_shell_warning | default(esxi_hardening_defaults.suppress_shell_warning)) | ternary(1, 0) }}"
+      Config.HostAgent.plugins.hostsvc.esxAdminsGroup: "{{ esxi.hardening.admin_group | default('') }}"
+      DCUI.Access: "{{ esxi.hardening.dcui_access | default('root') }}"
+      Annotations.WelcomeMessage: "{{ esxi.hardening.banner | default('Authorized access only') }}"
+      Syslog.global.logHost: "{{ esxi.syslog_target | default(vmware_observability.syslog.esxi_target | default(omit)) }}"
+      Syslog.global.logDirUnique: "{{ (vmware_observability.syslog.per_host_dir | default(true)) | ternary('true', 'false') }}"
+      NTP.ConfiguredServer: "{{ (esxi.ntp_servers | default(vmware_observability.ntp_servers | default([]))) | join(',') | default(omit) }}"
+      UserVars.ESXiShellInteractiveTimeOut: "{{ esxi.hardening.esxi_shell_timeout | default(900) }}"
+      UserVars.ESXiShellTimeOut: "{{ esxi.hardening.esxi_shell_timeout | default(900) }}"
+      UserVars.SSHEnabled: "{{ (esxi.hardening.ssh_enabled | default(esxi_hardening_defaults.ssh_enabled)) | ternary(1, 0) }}"
   delegate_to: localhost

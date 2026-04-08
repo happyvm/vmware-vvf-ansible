@@ -1,4 +1,12 @@
 ---
+- name: Validate dvPortgroup model
+  ansible.builtin.assert:
+    that:
+      - dvpg.name is defined
+      - dvpg.dvswitch_name is defined
+      - dvpg.vlan_id is defined
+    fail_msg: "dvPortgroup invalide: name, dvswitch_name et vlan_id requis."
+
 - name: Créer / mettre à jour le distributed portgroup
   community.vmware.vmware_dvs_portgroup:
     hostname: "{{ vc.hostname }}"
@@ -9,7 +17,25 @@
     switch_name: "{{ dvpg.dvswitch_name }}"
     portgroup_name: "{{ dvpg.name }}"
     vlan_id: "{{ dvpg.vlan_id }}"
-    port_binding: "{{ dvpg.port_binding | default('static') }}"
-    num_ports: "{{ dvpg.num_ports | default(128) }}"
+    port_binding: "{{ dvpg.port_binding | default(dvportgroup_defaults.port_binding) }}"
+    num_ports: "{{ dvpg.num_ports | default(dvportgroup_defaults.num_ports) }}"
+    network_policy:
+      promiscuous_mode: "{{ dvpg.security.promiscuous_mode | default(dvportgroup_defaults.security.promiscuous_mode) }}"
+      forged_transmits: "{{ dvpg.security.forged_transmits | default(dvportgroup_defaults.security.forged_transmits) }}"
+      mac_changes: "{{ dvpg.security.mac_changes | default(dvportgroup_defaults.security.mac_changes) }}"
     state: present
+  delegate_to: localhost
+
+- name: Configure dvPortgroup MTU when provided and supported by module/endpoint
+  community.vmware.vmware_dvs_portgroup:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    datacenter_name: "{{ dc.name }}"
+    switch_name: "{{ dvpg.dvswitch_name }}"
+    portgroup_name: "{{ dvpg.name }}"
+    mtu: "{{ dvpg.mtu }}"
+    state: present
+  when: dvpg.mtu is defined
   delegate_to: localhost
