@@ -220,7 +220,13 @@ pwsh ./scripts/export-config.ps1 \
   -VCenterServer vcsa-paris.example.local
 ```
 
-> Les helpers génèrent une **base** d'inventaire. Un enrichissement manuel reste nécessaire (règles, hardening détaillé, conventions réseau, etc.).
+> Les helpers génèrent une **base** d'inventaire compatible avec le schéma actuel (`vmware_sites[*].vcenters[*].datacenters[*].clusters[*]`), y compris :
+> `host_rules`, `dvswitches`, `hosts` et `dvportgroups`.
+>
+> L'enrichissement manuel reste nécessaire pour :
+> - les objets réseau vDS/dvPortgroup détaillés ;
+> - les règles DRS/affinité métier ;
+> - le hardening avancé et les conventions DNS/NTP/vmkernel propres à votre standard.
 
 ---
 

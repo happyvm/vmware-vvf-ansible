@@ -68,7 +68,7 @@ while IFS= read -r dc; do
     CLUSTERS_JSON="$(jq \
       --arg cn "${cluster_name}" \
       --argjson hosts "${HOSTS_JSON}" \
-      '. + [{"name":$cn,"drs_enabled":true,"ha_enabled":true,"hosts":$hosts,"host_rules":{"affinity":[],"anti_affinity":[]},"dvportgroups":[]}]' <<<"${CLUSTERS_JSON}")"
+      '. + [{"name":$cn,"drs_enabled":true,"ha_enabled":true,"hosts":$hosts,"host_rules":{"affinity":[],"anti_affinity":[]},"dvswitches":[],"dvportgroups":[]}]' <<<"${CLUSTERS_JSON}")"
   done < <(govc find "/${dc}" -type c 2>/dev/null)
 
   jq --arg dc "${dc}" --argjson clusters "${CLUSTERS_JSON}" \

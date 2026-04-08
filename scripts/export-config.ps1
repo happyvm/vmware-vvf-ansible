@@ -46,6 +46,7 @@ try {
                     affinity = @()
                     anti_affinity = @()
                 }
+                dvswitches = @()
                 hosts = @($hosts)
                 dvportgroups = @()
             }
