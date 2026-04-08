@@ -14,7 +14,7 @@
     hostname: "{{ vc.hostname }}"
     username: "{{ vc.username }}"
     password: "{{ vc.password }}"
-    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    validate_certs: "{{ vc.validate_certs | default(not (vmware_allow_insecure_tls | default(true))) }}"
     datacenter_name: "{{ dc.name }}"
     switch_name: "{{ item.name }}"
     version: "{{ item.version | default(dvswitch_defaults.version) }}"
