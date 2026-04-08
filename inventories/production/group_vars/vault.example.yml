@@ -1,0 +1,5 @@
+---
+vault_vcenter_paris_username: administrator@vsphere.local
+vault_vcenter_paris_password: change_me
+vault_vcenter_paris_operator_password: change_me
+vault_esxi_paris_root_password: change_me

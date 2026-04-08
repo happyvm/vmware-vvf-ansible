@@ -1,0 +1,23 @@
+---
+- name: Converge
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vmware_sites:
+      - name: test-site
+        vcenters:
+          - name: test-vcenter
+            hostname: test-vcenter.local
+            username: user
+            password: pass
+            validate_certs: false
+            local_roles: []
+            local_accounts: []
+            datacenters: []
+
+  tasks:
+    - name: Validate minimal molecule inventory model
+      ansible.builtin.assert:
+        that:
+          - vmware_sites | length == 1
+          - vmware_sites[0].vcenters | length == 1

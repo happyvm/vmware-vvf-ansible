@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "master", "work"]
+
+jobs:
+  lint-and-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          ansible-galaxy collection install -r collections/requirements.yml
+
+      - name: yamllint
+        run: yamllint .
+
+      - name: ansible-lint
+        run: ansible-lint
+
+      - name: Syntax check preflight
+        run: ansible-playbook --syntax-check playbooks/preflight.yml
+
+      - name: Syntax check site
+        run: ansible-playbook --syntax-check playbooks/site.yml
+
+      - name: Validate simple inventory fixture
+        run: ansible-playbook tests/playbooks/validate_inventory.yml -e inventory_fixture=tests/inventory/simple.yml
+
+      - name: Validate multi-site inventory fixture
+        run: ansible-playbook tests/playbooks/validate_inventory.yml -e inventory_fixture=tests/inventory/multisite.yml

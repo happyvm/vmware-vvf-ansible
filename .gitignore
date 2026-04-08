@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Ansible
+*.retry
+collections/ansible_collections/
+.molecule/
+
+# Secrets / local overrides
+inventories/**/group_vars/vault.yml
+*.vault
+.env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,64 @@
+---
+vmware_sites:
+  - name: paris
+    vcenters:
+      - name: vcsa-paris-a
+        hostname: vcsa-paris-a.example.local
+        username: automation@vsphere.local
+        password: dummy
+        validate_certs: false
+        local_roles: []
+        local_accounts: []
+        datacenters:
+          - name: dc-paris-a
+            clusters:
+              - name: cl-paris-a
+                drs_enabled: true
+                ha_enabled: true
+                host_rules:
+                  affinity: []
+                  anti_affinity: []
+                dvswitches: []
+                hosts: []
+                dvportgroups: []
+      - name: vcsa-paris-b
+        hostname: vcsa-paris-b.example.local
+        username: automation@vsphere.local
+        password: dummy
+        validate_certs: false
+        local_roles: []
+        local_accounts: []
+        datacenters:
+          - name: dc-paris-b
+            clusters:
+              - name: cl-paris-b
+                drs_enabled: true
+                ha_enabled: true
+                host_rules:
+                  affinity: []
+                  anti_affinity: []
+                dvswitches: []
+                hosts: []
+                dvportgroups: []
+
+  - name: montreal
+    vcenters:
+      - name: vcsa-mtl-a
+        hostname: vcsa-mtl-a.example.local
+        username: automation@vsphere.local
+        password: dummy
+        validate_certs: false
+        local_roles: []
+        local_accounts: []
+        datacenters:
+          - name: dc-mtl-a
+            clusters:
+              - name: cl-mtl-a
+                drs_enabled: true
+                ha_enabled: true
+                host_rules:
+                  affinity: []
+                  anti_affinity: []
+                dvswitches: []
+                hosts: []
+                dvportgroups: []

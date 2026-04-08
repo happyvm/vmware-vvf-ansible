@@ -1,0 +1,67 @@
+---
+- name: Validate vmware inventory structure fixture
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - "{{ inventory_fixture }}"
+
+  tasks:
+    - name: Ensure root key exists
+      ansible.builtin.assert:
+        that:
+          - vmware_sites is defined
+          - vmware_sites is iterable
+          - vmware_sites | length > 0
+
+    - name: Build flattened object lists
+      ansible.builtin.set_fact:
+        all_vcenters: "{{ vmware_sites | map(attribute='vcenters') | list | flatten }}"
+        all_datacenters: "{{ vmware_sites | map(attribute='vcenters') | list | flatten | map(attribute='datacenters') | list | flatten }}"
+        all_clusters: "{{ vmware_sites | map(attribute='vcenters') | list | flatten | map(attribute='datacenters') | list | flatten | map(attribute='clusters') | list | flatten }}"
+
+    - name: Validate each site
+      ansible.builtin.assert:
+        that:
+          - item.name is string
+          - item.name | length > 0
+          - item.vcenters is iterable
+          - item.vcenters | length > 0
+      loop: "{{ vmware_sites }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Validate each vCenter
+      ansible.builtin.assert:
+        that:
+          - item.name is string
+          - item.hostname is string
+          - item.username is string
+          - item.password is string
+          - item.datacenters is iterable
+      loop: "{{ all_vcenters }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Validate each datacenter
+      ansible.builtin.assert:
+        that:
+          - item.name is string
+          - item.clusters is iterable
+      loop: "{{ all_datacenters }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Validate each cluster
+      ansible.builtin.assert:
+        that:
+          - item.name is string
+          - item.host_rules is mapping
+          - item.host_rules.affinity is iterable
+          - item.host_rules.anti_affinity is iterable
+          - item.dvswitches is iterable
+          - item.hosts is iterable
+          - item.dvportgroups is iterable
+      loop: "{{ all_clusters }}"
+      loop_control:
+        label: "{{ item.name }}"

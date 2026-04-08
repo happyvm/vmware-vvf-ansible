@@ -1,0 +1,19 @@
+---
+- name: Create or update distributed switches
+  community.vmware.vmware_dvswitch:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    datacenter_name: "{{ dc.name }}"
+    switch_name: "{{ item.name }}"
+    version: "{{ item.version | default(omit) }}"
+    mtu: "{{ item.mtu | default(1500) }}"
+    uplink_quantity: "{{ item.uplink_quantity | default(2) }}"
+    discovery_protocol: "{{ item.discovery_protocol | default('cdp') }}"
+    discovery_operation: "{{ item.discovery_operation | default('both') }}"
+    state: present
+  loop: "{{ cluster.dvswitches | default([]) }}"
+  loop_control:
+    label: "{{ dc.name }} / {{ item.name }}"
+  delegate_to: localhost

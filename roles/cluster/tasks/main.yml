@@ -1,0 +1,74 @@
+---
+- name: Créer / mettre à jour le cluster
+  community.vmware.vmware_cluster:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    datacenter_name: "{{ dc.name }}"
+    cluster_name: "{{ cluster.name }}"
+    enable_drs: "{{ cluster.drs_enabled | default(true) }}"
+    enable_ha: "{{ cluster.ha_enabled | default(true) }}"
+    evc_mode: "{{ cluster.evc_mode | default(omit) }}"
+    state: present
+  delegate_to: localhost
+
+- name: Créer les règles d'affinité VM/VM
+  community.vmware.vmware_vm_vm_drs_rule:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    datacenter_name: "{{ dc.name }}"
+    cluster_name: "{{ cluster.name }}"
+    drs_rule_name: "{{ item.name }}"
+    vms: "{{ item.vms }}"
+    enabled: "{{ item.enabled | default(true) }}"
+    mandatory: "{{ item.mandatory | default(false) }}"
+    affinity_rule: true
+    state: present
+  loop: "{{ cluster.host_rules.affinity | default([]) }}"
+  loop_control:
+    label: "{{ cluster.name }} / {{ item.name }}"
+  delegate_to: localhost
+
+- name: Créer les règles d'anti-affinité VM/VM
+  community.vmware.vmware_vm_vm_drs_rule:
+    hostname: "{{ vc.hostname }}"
+    username: "{{ vc.username }}"
+    password: "{{ vc.password }}"
+    validate_certs: "{{ vc.validate_certs | default(false) }}"
+    datacenter_name: "{{ dc.name }}"
+    cluster_name: "{{ cluster.name }}"
+    drs_rule_name: "{{ item.name }}"
+    vms: "{{ item.vms }}"
+    enabled: "{{ item.enabled | default(true) }}"
+    mandatory: "{{ item.mandatory | default(true) }}"
+    affinity_rule: false
+    state: present
+  loop: "{{ cluster.host_rules.anti_affinity | default([]) }}"
+  loop_control:
+    label: "{{ cluster.name }} / {{ item.name }}"
+  delegate_to: localhost
+
+- name: Configurer les vDS du cluster
+  ansible.builtin.include_role:
+    name: dvswitch
+
+- name: Configurer les hôtes ESXi du cluster
+  ansible.builtin.include_role:
+    name: esxi_host
+  loop: "{{ cluster.hosts | default([]) }}"
+  loop_control:
+    label: "{{ cluster.name }} / {{ item.hostname }}"
+  vars:
+    esxi: "{{ item }}"
+
+- name: Configurer les dvPortgroups du cluster
+  ansible.builtin.include_role:
+    name: dvportgroup
+  loop: "{{ cluster.dvportgroups | default([]) }}"
+  loop_control:
+    label: "{{ cluster.name }} / {{ item.name }}"
+  vars:
+    dvpg: "{{ item }}"
