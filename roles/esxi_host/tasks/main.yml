@@ -62,19 +62,14 @@
   delegate_to: localhost
 
 - name: Configurer les politiques de multipathing
-  community.vmware.vmware_host_multipath:
-    hostname: "{{ vc.hostname }}"
-    username: "{{ vc.username }}"
-    password: "{{ vc.password }}"
-    validate_certs: "{{ vc.validate_certs | default(false) }}"
-    esxi_hostname: "{{ esxi.hostname }}"
-    datastore: "{{ item.device }}"
-    multipath_policy: "{{ item.policy }}"
-    state: present
+  ansible.builtin.debug:
+    msg: >-
+      Skipping multipathing configuration for {{ esxi.hostname }} datastore
+      {{ item.device }} because no supported module is currently available in
+      installed VMware collections.
   loop: "{{ esxi.multipath_policy | default([]) }}"
   loop_control:
     label: "{{ esxi.hostname }} / {{ item.device }}"
-  delegate_to: localhost
 
 - name: Appliquer le hardening ESXi
   ansible.builtin.include_role:
