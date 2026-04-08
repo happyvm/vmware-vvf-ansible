@@ -27,16 +27,6 @@
       Config.HostAgent.plugins.hostsvc.esxAdminsGroup: "{{ esxi.hardening.admin_group | default('') }}"
       DCUI.Access: "{{ esxi.hardening.dcui_access | default('root') }}"
       Annotations.WelcomeMessage: "{{ esxi.hardening.banner | default('Authorized access only') }}"
-      Syslog.global.logHost: >-
-        {{
-          esxi.syslog_target
-          | default(vmware_observability.syslog.esxi_target | default(omit))
-        }}
-      Syslog.global.logDirUnique: >-
-        {{
-          (vmware_observability.syslog.per_host_dir | default(true))
-          | ternary('true', 'false')
-        }}
       NTP.ConfiguredServer: >-
         {{
           (esxi.ntp_servers | default(vmware_observability.ntp_servers | default([])))
