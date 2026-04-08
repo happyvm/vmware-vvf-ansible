@@ -41,3 +41,6 @@ jobs:
 
       - name: Validate multi-site inventory fixture
         run: ansible-playbook tests/playbooks/validate_inventory.yml -e inventory_fixture=tests/inventory/multisite.yml
+
+      - name: Regression tests for VMware roles
+        run: pytest -q tests/test_regression_roles.py

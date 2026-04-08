@@ -264,12 +264,19 @@ ansible-lint
   - valide la structure d'inventaire sur deux fixtures :
     - `tests/inventory/simple.yml`
     - `tests/inventory/multisite.yml`
+  - exécute des tests de non-régression ciblés sur les rôles critiques :
+    - hardening vCenter (`roles/vcenter_hardening`)
+    - hardening ESXi (`roles/esxi_hardening`)
+    - observabilité/syslog (`roles/logging_syslog`)
+    - cluster HA/DRS (`roles/cluster`)
+    - dvSwitch (`roles/dvswitch`)
 
 Validation locale des fixtures :
 
 ```bash
 ansible-playbook tests/playbooks/validate_inventory.yml -e inventory_fixture=tests/inventory/simple.yml
 ansible-playbook tests/playbooks/validate_inventory.yml -e inventory_fixture=tests/inventory/multisite.yml
+pytest -q tests/test_regression_roles.py
 ```
 
 ---
