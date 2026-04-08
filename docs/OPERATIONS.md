@@ -10,6 +10,18 @@ La variable `vmware_observability` centralise les paramètres d'observabilité c
 - `vmware_observability.vcenter.event_retention_days`: rétention des événements vCenter.
 - `vmware_observability.ntp_servers`: serveurs NTP communs.
 
+## Source de vérité Syslog ESXi
+
+La configuration Syslog ESXi est portée **uniquement** par le rôle `logging_syslog`.
+
+- Le rôle `esxi_hardening` ne configure plus les options `Syslog.global.*`.
+- Les variables supportées restent:
+  - `esxi.syslog_target` (niveau hôte, prioritaire)
+  - `vmware_observability.syslog.esxi_target` (niveau global)
+  - `vmware_observability.syslog.per_host_dir` (répertoire dédié par hôte)
+
+Cette séparation évite les doubles écritures de configuration et clarifie la responsabilité des rôles.
+
 ## Recommandations d'exploitation
 
 1. Pointez ESXi et vCenter vers une plateforme syslog/SIEM centralisée.

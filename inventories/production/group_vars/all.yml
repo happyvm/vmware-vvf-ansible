@@ -5,6 +5,8 @@ vmware_observability:
     - 0.pool.ntp.org
     - 1.pool.ntp.org
   syslog:
+    # Source globale pour le rôle logging_syslog
+    # (surcharge possible par hôte via esxi.syslog_target)
     esxi_target: "udp://10.10.0.20:514"
     per_host_dir: true
   vcenter:

@@ -165,7 +165,7 @@ Le flux actuel est :
    - join cluster
    - DNS / NTP / VMkernel
    - `esxi_hardening`
-   - `logging_syslog`
+   - `logging_syslog` (source de vérité unique pour `Syslog.global.*`)
 5. `dvportgroup`
 
 Ce séquencement évite de créer des objets dépendants avant leurs prérequis.
