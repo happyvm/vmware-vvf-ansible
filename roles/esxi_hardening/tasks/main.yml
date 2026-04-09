@@ -10,7 +10,11 @@
     password: "{{ vc.password }}"
     validate_certs: "{{ vc.validate_certs | default(not (vmware_allow_insecure_tls | default(true))) }}"
     esxi_hostname: "{{ esxi.hostname }}"
-    lockdown_mode: "{{ (esxi.hardening | default({})).lockdown_mode | default(esxi.lockdown_mode | default(esxi_hardening_defaults.lockdown_mode)) }}"
+    lockdown_mode: >-
+      {{
+        esxi_hardening_cfg.lockdown_mode
+        | default(esxi.lockdown_mode | default(esxi_hardening_defaults.lockdown_mode))
+      }}
     state: present
   delegate_to: localhost
 

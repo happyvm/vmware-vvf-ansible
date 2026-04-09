@@ -27,38 +27,38 @@
           scope:
             sites: "{{ selected_sites | map(attribute='name') | list }}"
           summary:
-            total_hosts: "{{ compliance_report_entries | default([]) | length }}"
+            total_hosts: "{{ compliance_checks_report_entries | default([]) | length }}"
             secure_boot_non_compliant: >-
               {{
-                compliance_report_entries | default([])
+                compliance_checks_report_entries | default([])
                 | selectattr('checks.secure_boot.status', 'equalto', 'non_compliant')
                 | list | length
               }}
             secure_boot_unknown_or_unavailable: >-
               {{
-                compliance_report_entries | default([])
+                compliance_checks_report_entries | default([])
                 | selectattr('checks.secure_boot.status', 'in', ['unknown', 'unavailable'])
                 | list | length
               }}
             vib_non_compliant: >-
               {{
-                compliance_report_entries | default([])
+                compliance_checks_report_entries | default([])
                 | selectattr('checks.vib_signature.status', 'equalto', 'non_compliant')
                 | list | length
               }}
             vib_unknown_or_unavailable: >-
               {{
-                compliance_report_entries | default([])
+                compliance_checks_report_entries | default([])
                 | selectattr('checks.vib_signature.status', 'in', ['unknown', 'unavailable'])
                 | list | length
               }}
             tls_non_compliant: >-
               {{
-                compliance_report_entries | default([])
+                compliance_checks_report_entries | default([])
                 | selectattr('checks.tls_validation.status', 'equalto', 'non_compliant')
                 | list | length
               }}
-          hosts: "{{ compliance_report_entries | default([]) }}"
+          hosts: "{{ compliance_checks_report_entries | default([]) }}"
 
     - name: Print consolidated compliance report
       ansible.builtin.debug:
