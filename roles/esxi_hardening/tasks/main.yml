@@ -28,24 +28,24 @@
     options:
       UserVars.SuppressShellWarning: >-
         {{
-          (esxi_hardening_cfg.suppress_shell_warning
+          ((esxi.hardening | default({})).suppress_shell_warning
           | default(esxi_hardening_defaults.suppress_shell_warning))
           | ternary(1, 0)
         }}
-      Config.HostAgent.plugins.hostsvc.esxAdminsGroup: "{{ esxi_hardening_cfg.admin_group | default('') }}"
-      DCUI.Access: "{{ esxi_hardening_cfg.dcui_access | default('root') }}"
-      Annotations.WelcomeMessage: "{{ esxi_hardening_cfg.banner | default('Authorized access only') }}"
+      Config.HostAgent.plugins.hostsvc.esxAdminsGroup: "{{ (esxi.hardening | default({})).admin_group | default('') }}"
+      DCUI.Access: "{{ (esxi.hardening | default({})).dcui_access | default('root') }}"
+      Annotations.WelcomeMessage: "{{ (esxi.hardening | default({})).banner | default('Authorized access only') }}"
       NTP.ConfiguredServer: >-
         {{
           (esxi.ntp_servers | default(vmware_observability.ntp_servers | default([])))
           | join(',')
           | default(omit)
         }}
-      UserVars.ESXiShellInteractiveTimeOut: "{{ esxi_hardening_cfg.esxi_shell_timeout | default(900) }}"
-      UserVars.ESXiShellTimeOut: "{{ esxi_hardening_cfg.esxi_shell_timeout | default(900) }}"
+      UserVars.ESXiShellInteractiveTimeOut: "{{ (esxi.hardening | default({})).esxi_shell_timeout | default(900) }}"
+      UserVars.ESXiShellTimeOut: "{{ (esxi.hardening | default({})).esxi_shell_timeout | default(900) }}"
       UserVars.SSHEnabled: >-
         {{
-          (esxi_hardening_cfg.ssh_enabled | default(esxi_hardening_defaults.ssh_enabled))
+          ((esxi.hardening | default({})).ssh_enabled | default(esxi_hardening_defaults.ssh_enabled))
           | ternary(1, 0)
         }}
   delegate_to: localhost
