@@ -3,10 +3,13 @@
   hosts: localhost
   gather_facts: false
 
-  vars_files:
-    - "{{ inventory_fixture }}"
-
   tasks:
+    - name: Load inventory fixture variables
+      ansible.builtin.include_vars:
+        file: >-
+          {{ (inventory_fixture if (inventory_fixture | regex_search('^/'))
+          else (playbook_dir ~ '/../../' ~ inventory_fixture)) | realpath }}
+
     - name: Ensure root key exists
       ansible.builtin.assert:
         that:
