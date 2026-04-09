@@ -20,9 +20,9 @@
     port_binding: "{{ dvpg.port_binding | default(dvportgroup_defaults.port_binding) }}"
     num_ports: "{{ dvpg.num_ports | default(dvportgroup_defaults.num_ports) }}"
     network_policy:
-      promiscuous_mode: "{{ dvpg.security.promiscuous_mode | default(dvportgroup_defaults.security.promiscuous_mode) }}"
-      forged_transmits: "{{ dvpg.security.forged_transmits | default(dvportgroup_defaults.security.forged_transmits) }}"
-      mac_changes: "{{ dvpg.security.mac_changes | default(dvportgroup_defaults.security.mac_changes) }}"
+      promiscuous_mode: "{{ (dvpg.security | default({})).promiscuous_mode | default(dvportgroup_defaults.security.promiscuous_mode) }}"
+      forged_transmits: "{{ (dvpg.security | default({})).forged_transmits | default(dvportgroup_defaults.security.forged_transmits) }}"
+      mac_changes: "{{ (dvpg.security | default({})).mac_changes | default(dvportgroup_defaults.security.mac_changes) }}"
     state: present
   delegate_to: localhost
 
