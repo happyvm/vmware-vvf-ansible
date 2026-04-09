@@ -76,6 +76,33 @@ def test_esxi_hardening_baseline_contains_lockdown_shell_ssh_and_ntp() -> None:
         assert required_option in options
 
 
+def test_esxi_hardening_uses_guarded_nested_access_for_hardening_values() -> None:
+    tasks = _load_tasks("roles/esxi_hardening/tasks/main.yml")
+
+    map_task = _find_task(tasks, "Build safe ESXi hardening config map")
+    assert map_task["ansible.builtin.set_fact"]["esxi_hardening_cfg"] == "{{ esxi.hardening | default({}) }}"
+
+    lockdown_task = _find_task(tasks, "Enable ESXi lockdown mode when requested")
+    lockdown_mode = lockdown_task["community.vmware.vmware_host_lockdown"]["lockdown_mode"]
+    assert "esxi_hardening_cfg.lockdown_mode" in lockdown_mode
+    assert "esxi.hardening." not in lockdown_mode
+
+    hardening_task = _find_task(tasks, "Apply ESXi hardening advanced options")
+    options = hardening_task["community.vmware.vmware_host_config_manager"]["options"]
+
+    for option_value in options.values():
+        if isinstance(option_value, str):
+            assert "esxi.hardening." not in option_value
+
+    assert "esxi_hardening_cfg.suppress_shell_warning" in options["UserVars.SuppressShellWarning"]
+    assert "esxi_hardening_cfg.admin_group" in options["Config.HostAgent.plugins.hostsvc.esxAdminsGroup"]
+    assert "esxi_hardening_cfg.dcui_access" in options["DCUI.Access"]
+    assert "esxi_hardening_cfg.banner" in options["Annotations.WelcomeMessage"]
+    assert "esxi_hardening_cfg.esxi_shell_timeout" in options["UserVars.ESXiShellInteractiveTimeOut"]
+    assert "esxi_hardening_cfg.esxi_shell_timeout" in options["UserVars.ESXiShellTimeOut"]
+    assert "esxi_hardening_cfg.ssh_enabled" in options["UserVars.SSHEnabled"]
+
+
 def test_cluster_ha_parameters_and_drs_rules_are_present() -> None:
     tasks = _load_tasks("roles/cluster/tasks/main.yml")
 
