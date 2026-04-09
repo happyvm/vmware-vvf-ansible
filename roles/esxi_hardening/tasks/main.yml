@@ -1,4 +1,8 @@
 ---
+- name: Build safe ESXi hardening config map
+  ansible.builtin.set_fact:
+    esxi_hardening_cfg: "{{ esxi.hardening | default({}) }}"
+
 - name: Enable ESXi lockdown mode when requested
   community.vmware.vmware_host_lockdown:
     hostname: "{{ vc.hostname }}"
