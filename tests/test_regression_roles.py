@@ -29,6 +29,21 @@ def _find_task(tasks: list[dict[str, Any]], task_name: str) -> dict[str, Any]:
     raise AssertionError(f"Task '{task_name}' not found. Available: {available}")
 
 
+def _load_playbook_tasks(relative_path: str) -> list[dict[str, Any]]:
+    plays = _load_tasks(relative_path)
+    assert plays, f"{relative_path} must contain at least one play"
+    play_tasks = plays[0].get("tasks")
+    assert isinstance(play_tasks, list), f"{relative_path} first play must define a tasks list"
+    return play_tasks
+
+
+def _get_assert_clauses(task: dict[str, Any]) -> list[str]:
+    assert_block = task["ansible.builtin.assert"]
+    assert_clauses = assert_block["that"]
+    assert isinstance(assert_clauses, list)
+    return [str(clause) for clause in assert_clauses]
+
+
 def test_vcenter_hardening_and_observability_settings_are_enforced() -> None:
     tasks = _load_tasks("roles/vcenter_hardening/tasks/main.yml")
 
@@ -127,3 +142,130 @@ def test_observability_syslog_role_targets_esxi_host_options() -> None:
 
     assert "Syslog.global.logHost" in options
     assert "Syslog.global.logDirUnique" in options
+
+
+def test_dvportgroup_security_settings_handle_absent_security_block() -> None:
+    tasks = _load_tasks("roles/dvportgroup/tasks/main.yml")
+
+    dvpg_task = _find_task(tasks, "Créer / mettre à jour le distributed portgroup")
+    network_policy = dvpg_task["community.vmware.vmware_dvs_portgroup"]["network_policy"]
+
+    for key in ("promiscuous_mode", "forged_transmits", "mac_changes"):
+        expression = str(network_policy[key])
+        assert "dvpg.security | default({})" in expression
+
+
+def test_esxi_hardening_settings_handle_absent_hardening_block() -> None:
+    tasks = _load_tasks("roles/esxi_hardening/tasks/main.yml")
+
+    lockdown_task = _find_task(tasks, "Enable ESXi lockdown mode when requested")
+    lockdown_expr = str(lockdown_task["community.vmware.vmware_host_lockdown"]["lockdown_mode"])
+    assert "esxi.hardening | default({})" in lockdown_expr
+
+    options_task = _find_task(tasks, "Apply ESXi hardening advanced options")
+    options = options_task["community.vmware.vmware_host_config_manager"]["options"]
+
+    for key in (
+        "UserVars.SuppressShellWarning",
+        "Config.HostAgent.plugins.hostsvc.esxAdminsGroup",
+        "DCUI.Access",
+        "Annotations.WelcomeMessage",
+        "UserVars.ESXiShellInteractiveTimeOut",
+        "UserVars.ESXiShellTimeOut",
+        "UserVars.SSHEnabled",
+    ):
+        expression = str(options[key])
+        assert "esxi.hardening | default({})" in expression
+
+
+def test_preflight_schema_assertions_cover_critical_inventory_hierarchy() -> None:
+    tasks = _load_playbook_tasks("playbooks/preflight.yml")
+
+    site_assertions = _get_assert_clauses(_find_task(tasks, "Validate each site object"))
+    vcenter_assertions = _get_assert_clauses(_find_task(tasks, "Validate each vCenter object"))
+    datacenter_assertions = _get_assert_clauses(_find_task(tasks, "Validate each datacenter object"))
+    cluster_assertions = _get_assert_clauses(_find_task(tasks, "Validate each cluster object"))
+    host_assertions = _get_assert_clauses(_find_task(tasks, "Validate each ESXi host entry"))
+
+    for expected_clause in (
+        "item.name is defined",
+        "item.vcenters is defined",
+        "item.vcenters is sequence",
+        "item.vcenters | length > 0",
+    ):
+        assert expected_clause in site_assertions
+
+    for expected_clause in (
+        "item.hostname is defined",
+        "item.username is defined",
+        "item.password is defined",
+        "item.datacenters is defined",
+        "item.datacenters is sequence",
+        "item.datacenters | length > 0",
+    ):
+        assert expected_clause in vcenter_assertions
+
+    for expected_clause in (
+        "item.name is defined",
+        "item.clusters is defined",
+        "item.clusters is sequence",
+        "item.clusters | length > 0",
+    ):
+        assert expected_clause in datacenter_assertions
+
+    for expected_clause in (
+        "item.name is defined",
+        "item.hosts is defined",
+        "item.hosts is sequence",
+        "item.host_rules is defined",
+        "item.host_rules is mapping",
+        "item.host_rules.affinity is defined",
+        "item.host_rules.affinity is sequence",
+        "item.host_rules.anti_affinity is defined",
+        "item.host_rules.anti_affinity is sequence",
+        "item.dvswitches is defined",
+        "item.dvswitches is sequence",
+        "item.dvportgroups is defined",
+        "item.dvportgroups is sequence",
+    ):
+        assert expected_clause in cluster_assertions
+
+    for expected_clause in (
+        "item.1.hostname is defined",
+        "item.1.username is defined",
+        "item.1.password is defined",
+    ):
+        assert expected_clause in host_assertions
+
+
+def test_unsupported_multipathing_keys_are_rejected_in_preflight_and_role() -> None:
+    preflight_tasks = _load_playbook_tasks("playbooks/preflight.yml")
+    preflight_assertions = _get_assert_clauses(
+        _find_task(preflight_tasks, "Validate unsupported multipathing keys are absent")
+    )
+
+    esxi_tasks = _load_tasks("roles/esxi_host/tasks/main.yml")
+    esxi_assertions = _get_assert_clauses(
+        _find_task(esxi_tasks, "Refuser la configuration multipathing non supportée")
+    )
+
+    preflight_rejections = {
+        clause.replace("item.1.", "") for clause in preflight_assertions if clause.endswith("is not defined")
+    }
+    esxi_rejections = {
+        clause.replace("esxi.", "") for clause in esxi_assertions if clause.endswith("is not defined")
+    }
+
+    assert preflight_rejections == {"multipath_policy is not defined", "multipath_policies is not defined"}
+    assert esxi_rejections == {"multipath_policy is not defined", "multipath_policies is not defined"}
+
+    preflight_fail_msg = _find_task(preflight_tasks, "Validate unsupported multipathing keys are absent")[
+        "ansible.builtin.assert"
+    ]["fail_msg"]
+    esxi_fail_msg = _find_task(esxi_tasks, "Refuser la configuration multipathing non supportée")[
+        "ansible.builtin.assert"
+    ]["fail_msg"]
+
+    for text in ("multipath_policy", "multipath_policies"):
+        assert text in preflight_fail_msg
+        assert text in esxi_fail_msg
